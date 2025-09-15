@@ -1,15 +1,7 @@
 {
-  "name": "db-gateway",
+  "name": "achievement-management",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/projet-ccm2/DB-gateway#readme",
-  "bugs": {
-    "url": "https://github.com/projet-ccm2/DB-gateway/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/projet-ccm2/DB-gateway.git"
-  },
   "license": "ISC",
   "author": "",
   "type": "commonjs",
