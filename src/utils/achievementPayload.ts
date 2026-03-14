@@ -125,7 +125,8 @@ function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
   const normalizedValue = value
     .trim()
     .toLowerCase()
-    .replace(/[\s-]+/g, "_");
+    .split(/[\s-]+/g)
+    .join("_");
 
   if (
     !supportedTriggerLabels.includes(normalizedValue as SupportedTriggerLabel)

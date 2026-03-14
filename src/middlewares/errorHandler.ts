@@ -24,10 +24,9 @@ function errorHandler(
   error: Error,
   req: Request,
   res: Response,
+  // eslint-disable-next-line no-unused-vars
   next: NextFunction,
 ): void {
-  void next;
-
   if (error instanceof ApplicationError) {
     res.status(error.statusCode).json({
       code: error.code,

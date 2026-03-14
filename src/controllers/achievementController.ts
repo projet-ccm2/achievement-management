@@ -1,10 +1,12 @@
 import { Request, RequestHandler, Response } from "express";
-import { createAchievement } from "../services/achievementService";
+import {
+  createAchievement,
+  updateAchievement,
+} from "../services/achievementService";
 import {
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
 } from "../utils/achievementPayload";
-import { updateAchievement } from "../services/achievementService";
 
 function buildCreateAchievementHandler(
   createAchievementAction: typeof createAchievement,
