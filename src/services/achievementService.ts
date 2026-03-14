@@ -28,7 +28,7 @@ async function createAchievementWithDependencies(
     await dependencies.notificationClient.invalidateChannelCache(
       achievement.channelId,
     );
-  } catch (error) {
+  } catch {
     throw new ApplicationError(
       502,
       "notification_handler_error",
@@ -62,7 +62,7 @@ async function updateAchievementWithDependencies(
     await dependencies.notificationClient.invalidateChannelCache(
       achievement.channelId,
     );
-  } catch (error) {
+  } catch {
     throw new ApplicationError(
       502,
       "notification_handler_error",

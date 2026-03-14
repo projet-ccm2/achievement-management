@@ -1,3 +1,4 @@
+/* global describe, expect, it, jest */
 import { Request, Response } from "express";
 import {
   buildCreateAchievementHandler,
@@ -50,6 +51,7 @@ describe("achievementController", () => {
         },
       } as Request,
       response,
+      jest.fn(),
     );
 
     expect(createAchievement).toHaveBeenCalledWith({
@@ -82,6 +84,7 @@ describe("achievementController", () => {
           },
         } as Request,
         {} as Response,
+        jest.fn(),
       ),
     ).rejects.toBeInstanceOf(ApplicationError);
   });
@@ -133,6 +136,7 @@ describe("achievementController", () => {
         },
       } as unknown as Request,
       response,
+      jest.fn(),
     );
 
     expect(updateAchievement).toHaveBeenCalledWith("achievement-1", {

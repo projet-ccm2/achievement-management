@@ -1,3 +1,4 @@
+/* global afterEach, beforeEach, describe, expect, it, jest, process, require */
 jest.mock("../../utils/logger", () => ({
   logger: {
     info: jest.fn(),

@@ -1,3 +1,4 @@
+/* global Response, fetch */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
 import { Achievement } from "../models/achievement";
@@ -7,35 +8,38 @@ import {
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
 
-interface DbAchievementClient {
-  createAchievement(payload: CreateAchievementRequest): Promise<Achievement>;
-  updateAchievement(
-    achievementId: string,
-    payload: UpdateAchievementRequest,
-  ): Promise<Achievement>;
-}
+/* eslint-disable no-unused-vars */
+type DbAchievementClient = {
+  createAchievement: (
+    ...args: [CreateAchievementRequest]
+  ) => Promise<Achievement>;
+  updateAchievement: (
+    ...args: [string, UpdateAchievementRequest]
+  ) => Promise<Achievement>;
+};
+/* eslint-enable no-unused-vars */
 
 function buildDbPayload(
   payload: CreateAchievementRequest | UpdateAchievementRequest,
 ): Record<string, unknown> {
   return {
-    Achievement_Title: payload.title,
-    Achievement_Description: payload.description,
-    Achievement_Goal: payload.goal,
-    Achievement_Reward: payload.reward,
-    Achievement_Label: payload.label,
-    Achievement_Public: payload.public,
-    Achievement_Downloads: 0,
-    Achievement_Visits: 0,
-    Achievement_Active: payload.active,
-    Achievement_Secret: payload.secret,
-    Achievement_Image: payload.image,
+    ["Achievement_Title"]: payload.title,
+    ["Achievement_Description"]: payload.description,
+    ["Achievement_Goal"]: payload.goal,
+    ["Achievement_Reward"]: payload.reward,
+    ["Achievement_Label"]: payload.label,
+    ["Achievement_Public"]: payload.public,
+    ["Achievement_Downloads"]: 0,
+    ["Achievement_Visits"]: 0,
+    ["Achievement_Active"]: payload.active,
+    ["Achievement_Secret"]: payload.secret,
+    ["Achievement_Image"]: payload.image,
     ...(Object.prototype.hasOwnProperty.call(payload, "channelId")
-      ? { Chanel_ID: (payload as CreateAchievementRequest).channelId }
+      ? { ["Chanel_ID"]: (payload as CreateAchievementRequest).channelId }
       : {}),
-    Type: {
-      Type_Label: payload.type.label,
-      Type_Data: payload.type.data,
+    ["Type"]: {
+      ["Type_Label"]: payload.type.label,
+      ["Type_Data"]: payload.type.data,
     },
   };
 }

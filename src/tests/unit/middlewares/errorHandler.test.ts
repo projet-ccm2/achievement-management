@@ -1,3 +1,4 @@
+/* global describe, expect, it, jest */
 import { Request, Response } from "express";
 import {
   ApplicationError,

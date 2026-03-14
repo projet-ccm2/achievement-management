@@ -1,3 +1,4 @@
+/* global afterAll, beforeEach, describe, expect, it, jest, process, require */
 describe("Environment Configuration", () => {
   const originalEnv = process.env;
 

@@ -1,3 +1,4 @@
+/* global describe, expect, it, jest, require */
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import {
   createAchievementWithDependencies,
@@ -136,9 +137,13 @@ describe("achievementService", () => {
       },
     }));
 
-    const { createAchievement } = require("../../../services/achievementService");
+    const {
+      createAchievement,
+    } = require("../../../services/achievementService");
 
-    await expect(createAchievement(payload)).resolves.toEqual(createdAchievement);
+    await expect(createAchievement(payload)).resolves.toEqual(
+      createdAchievement,
+    );
   });
 
   it("should use the default dependencies in updateAchievement", async () => {
@@ -176,7 +181,9 @@ describe("achievementService", () => {
       },
     }));
 
-    const { updateAchievement } = require("../../../services/achievementService");
+    const {
+      updateAchievement,
+    } = require("../../../services/achievementService");
 
     await expect(
       updateAchievement("achievement-1", {

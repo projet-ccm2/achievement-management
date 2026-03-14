@@ -1,3 +1,4 @@
+/* global describe, expect, it */
 import {
   mapDbAchievementToResponse,
   parseCreateAchievementRequest,
@@ -292,11 +293,7 @@ describe("achievementPayload", () => {
         },
       }),
     ).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "public must be a boolean",
-      ),
+      new ApplicationError(400, "validation_error", "public must be a boolean"),
     );
   });
 
@@ -328,22 +325,22 @@ describe("achievementPayload", () => {
   it("should map a DB achievement response with nested type", () => {
     expect(
       mapDbAchievementToResponse({
-        Achievement_ID: "achievement-1",
-        Achievement_Title: "First",
-        Achievement_Description: "Desc",
-        Achievement_Goal: 10,
-        Achievement_Reward: 5,
-        Achievement_Label: "",
-        Achievement_Public: false,
-        Achievement_Downloads: 1,
-        Achievement_Visits: 2,
-        Achievement_Active: true,
-        Achievement_Secret: false,
-        Achievement_Image: "https://image.test/file.png",
-        Chanel_ID: "channel-1",
-        Type: {
-          Type_Label: "API Caller",
-          Type_Data: "event_key",
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "First",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 10,
+        ["Achievement_Reward"]: 5,
+        ["Achievement_Label"]: "",
+        ["Achievement_Public"]: false,
+        ["Achievement_Downloads"]: 1,
+        ["Achievement_Visits"]: 2,
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Achievement_Image"]: "https://image.test/file.png",
+        ["Chanel_ID"]: "channel-1",
+        ["Type"]: {
+          ["Type_Label"]: "API Caller",
+          ["Type_Data"]: "event_key",
         },
       }),
     ).toEqual({
@@ -370,17 +367,17 @@ describe("achievementPayload", () => {
   it("should map a DB achievement response with flat type fields and defaults", () => {
     expect(
       mapDbAchievementToResponse({
-        Achievement_ID: "achievement-1",
-        Achievement_Title: "First",
-        Achievement_Description: "Desc",
-        Achievement_Goal: 10,
-        Achievement_Reward: 5,
-        Achievement_Public: false,
-        Achievement_Active: true,
-        Achievement_Secret: false,
-        Chanel_ID: "channel-1",
-        Type_Label: "message",
-        Type_Data: "ignored",
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "First",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 10,
+        ["Achievement_Reward"]: 5,
+        ["Achievement_Public"]: false,
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Chanel_ID"]: "channel-1",
+        ["Type_Label"]: "message",
+        ["Type_Data"]: "ignored",
       }),
     ).toEqual({
       id: "achievement-1",
@@ -416,18 +413,18 @@ describe("achievementPayload", () => {
   it("should reject invalid DB numeric fields", () => {
     expect(() =>
       mapDbAchievementToResponse({
-        Achievement_ID: "achievement-1",
-        Achievement_Title: "First",
-        Achievement_Description: "Desc",
-        Achievement_Goal: 10,
-        Achievement_Reward: 5,
-        Achievement_Public: false,
-        Achievement_Downloads: -1,
-        Achievement_Active: true,
-        Achievement_Secret: false,
-        Chanel_ID: "channel-1",
-        Type_Label: "message",
-        Type_Data: null,
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "First",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 10,
+        ["Achievement_Reward"]: 5,
+        ["Achievement_Public"]: false,
+        ["Achievement_Downloads"]: -1,
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Chanel_ID"]: "channel-1",
+        ["Type_Label"]: "message",
+        ["Type_Data"]: null,
       }),
     ).toThrow(
       new ApplicationError(
@@ -441,17 +438,17 @@ describe("achievementPayload", () => {
   it("should reject invalid DB booleans", () => {
     expect(() =>
       mapDbAchievementToResponse({
-        Achievement_ID: "achievement-1",
-        Achievement_Title: "First",
-        Achievement_Description: "Desc",
-        Achievement_Goal: 10,
-        Achievement_Reward: 5,
-        Achievement_Public: "false",
-        Achievement_Active: true,
-        Achievement_Secret: false,
-        Chanel_ID: "channel-1",
-        Type_Label: "message",
-        Type_Data: null,
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "First",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 10,
+        ["Achievement_Reward"]: 5,
+        ["Achievement_Public"]: "false",
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Chanel_ID"]: "channel-1",
+        ["Type_Label"]: "message",
+        ["Type_Data"]: null,
       }),
     ).toThrow(
       new ApplicationError(

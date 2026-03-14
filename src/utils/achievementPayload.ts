@@ -122,7 +122,10 @@ function readNonNegativeInteger(value: unknown, fieldName: string): number {
 }
 
 function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
-  const normalizedValue = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const normalizedValue = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 
   if (
     !supportedTriggerLabels.includes(normalizedValue as SupportedTriggerLabel)
@@ -173,7 +176,9 @@ function normalizeTypeData(
   return readRequiredString(value, "type.data");
 }
 
-function parseCreateAchievementRequest(body: unknown): CreateAchievementRequest {
+function parseCreateAchievementRequest(
+  body: unknown,
+): CreateAchievementRequest {
   const parsedPayload = parseAchievementDefinitionPayload(body);
 
   return {
@@ -185,7 +190,9 @@ function parseCreateAchievementRequest(body: unknown): CreateAchievementRequest 
   };
 }
 
-function parseUpdateAchievementRequest(body: unknown): UpdateAchievementRequest {
+function parseUpdateAchievementRequest(
+  body: unknown,
+): UpdateAchievementRequest {
   return parseAchievementDefinitionPayload(body);
 }
 
@@ -236,10 +243,12 @@ function parseDbType(body: Record<string, unknown>): {
   label: SupportedTriggerLabel;
   data: string | null;
 } {
-  const nestedType = isRecord(body.Type) ? body.Type : undefined;
-  const labelSource = nestedType?.Type_Label ?? body.Type_Label;
-  const dataSource = nestedType?.Type_Data ?? body.Type_Data ?? null;
-  const label = normalizeTriggerLabel(readRequiredString(labelSource, "Type_Label"));
+  const nestedType = isRecord(body["Type"]) ? body["Type"] : undefined;
+  const labelSource = nestedType?.["Type_Label"] ?? body["Type_Label"];
+  const dataSource = nestedType?.["Type_Data"] ?? body["Type_Data"] ?? null;
+  const label = normalizeTriggerLabel(
+    readRequiredString(labelSource, "Type_Label"),
+  );
 
   return {
     label,
@@ -273,34 +282,42 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
   }
 
   return {
-    id: readRequiredString(body.Achievement_ID, "Achievement_ID"),
-    title: readRequiredString(body.Achievement_Title, "Achievement_Title"),
+    id: readRequiredString(body["Achievement_ID"], "Achievement_ID"),
+    title: readRequiredString(body["Achievement_Title"], "Achievement_Title"),
     description: readRequiredString(
-      body.Achievement_Description,
+      body["Achievement_Description"],
       "Achievement_Description",
     ),
-    goal: readPositiveInteger(body.Achievement_Goal, "Achievement_Goal"),
+    goal: readPositiveInteger(body["Achievement_Goal"], "Achievement_Goal"),
     reward: readNonNegativeInteger(
-      body.Achievement_Reward,
+      body["Achievement_Reward"],
       "Achievement_Reward",
     ),
     label:
-      body.Achievement_Label === undefined
+      body["Achievement_Label"] === undefined
         ? ""
-        : readRequiredString(body.Achievement_Label, "Achievement_Label", true),
-    public: readBoolean(body.Achievement_Public, "Achievement_Public"),
+        : readRequiredString(
+            body["Achievement_Label"],
+            "Achievement_Label",
+            true,
+          ),
+    public: readBoolean(body["Achievement_Public"], "Achievement_Public"),
     downloads: readOptionalNumber(
-      body.Achievement_Downloads,
+      body["Achievement_Downloads"],
       "Achievement_Downloads",
     ),
-    visits: readOptionalNumber(body.Achievement_Visits, "Achievement_Visits"),
-    active: readBoolean(body.Achievement_Active, "Achievement_Active"),
-    secret: readBoolean(body.Achievement_Secret, "Achievement_Secret"),
+    visits: readOptionalNumber(
+      body["Achievement_Visits"],
+      "Achievement_Visits",
+    ),
+    active: readBoolean(body["Achievement_Active"], "Achievement_Active"),
+    secret: readBoolean(body["Achievement_Secret"], "Achievement_Secret"),
     image:
-      body.Achievement_Image === undefined || body.Achievement_Image === null
+      body["Achievement_Image"] === undefined ||
+      body["Achievement_Image"] === null
         ? null
-        : readRequiredString(body.Achievement_Image, "Achievement_Image"),
-    channelId: readRequiredString(body.Chanel_ID, "Chanel_ID"),
+        : readRequiredString(body["Achievement_Image"], "Achievement_Image"),
+    channelId: readRequiredString(body["Chanel_ID"], "Chanel_ID"),
     type: parseDbType(body),
   };
 }

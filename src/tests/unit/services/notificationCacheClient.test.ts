@@ -1,3 +1,4 @@
+/* global afterEach, beforeEach, describe, expect, global, it, jest */
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import { HttpNotificationCacheClient } from "../../../services/notificationCacheClient";
 

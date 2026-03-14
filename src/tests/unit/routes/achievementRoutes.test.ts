@@ -1,3 +1,4 @@
+/* global describe, expect, it, jest */
 import { achievementRoutes } from "../../../routes/achievementRoutes";
 
 describe("achievementRoutes", () => {

@@ -1,3 +1,4 @@
+/* global beforeEach, describe, expect, it, jest */
 import request from "supertest";
 import { app } from "../../app";
 import { config } from "../../config/environment";
@@ -92,20 +93,22 @@ describe("Express App", () => {
         },
       });
 
-      const response = await request(app).post("/achievements").send({
-        title: " First 100 messages ",
-        description: "Unlock after 100 messages",
-        goal: 100,
-        reward: 250,
-        public: false,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "Message Content",
-          data: "hello world",
-        },
-      });
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: " First 100 messages ",
+          description: "Unlock after 100 messages",
+          goal: 100,
+          reward: 250,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          type: {
+            label: "Message Content",
+            data: "hello world",
+          },
+        });
 
       expect(response.status).toBe(201);
       expect(createAchievementMock).toHaveBeenCalledWith({
@@ -146,19 +149,21 @@ describe("Express App", () => {
     });
 
     it("should reject an invalid payload", async () => {
-      const response = await request(app).post("/achievements").send({
-        title: "Invalid",
-        description: "Invalid",
-        goal: 0,
-        reward: 10,
-        public: false,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-        },
-      });
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: "Invalid",
+          description: "Invalid",
+          goal: 0,
+          reward: 10,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+          },
+        });
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
@@ -173,20 +178,22 @@ describe("Express App", () => {
         new Error("unexpected downstream failure"),
       );
 
-      const response = await request(app).post("/achievements").send({
-        title: "Any",
-        description: "Any",
-        goal: 1,
-        reward: 0,
-        public: false,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
-      });
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: "Any",
+          description: "Any",
+          goal: 1,
+          reward: 0,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        });
 
       expect(response.status).toBe(500);
       expect(response.body).toEqual({
@@ -204,20 +211,22 @@ describe("Express App", () => {
         ),
       );
 
-      const response = await request(app).post("/achievements").send({
-        title: "Any",
-        description: "Any",
-        goal: 1,
-        reward: 0,
-        public: false,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
-      });
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: "Any",
+          description: "Any",
+          goal: 1,
+          reward: 0,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        });
 
       expect(response.status).toBe(502);
       expect(response.body).toEqual({

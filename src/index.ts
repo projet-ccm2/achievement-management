@@ -1,3 +1,4 @@
+/* global process */
 import { config } from "./config/environment";
 import { logger } from "./utils/logger";
 import { app } from "./app";

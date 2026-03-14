@@ -1,3 +1,4 @@
+/* global afterEach, beforeEach, describe, expect, it, jest, process, require */
 describe("Server Coverage Tests", () => {
   let originalProcessExit: typeof process.exit;
   let originalProcessOn: typeof process.on;

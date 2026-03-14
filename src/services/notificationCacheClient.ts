@@ -1,7 +1,9 @@
+/* global fetch */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
 
 interface NotificationCacheClient {
+  // eslint-disable-next-line no-unused-vars
   invalidateChannelCache(channelId: string): Promise<void>;
 }
 
