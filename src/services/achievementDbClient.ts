@@ -34,9 +34,7 @@ function buildDbPayload(
     ["Achievement_Active"]: payload.active,
     ["Achievement_Secret"]: payload.secret,
     ["Achievement_Image"]: payload.image,
-    ...("channelId" in payload
-      ? { ["Chanel_ID"]: (payload as CreateAchievementRequest).channelId }
-      : {}),
+    ...("channelId" in payload ? { ["Chanel_ID"]: payload.channelId } : {}),
     ["Type"]: {
       ["Type_Label"]: payload.type.label,
       ["Type_Data"]: payload.type.data,
