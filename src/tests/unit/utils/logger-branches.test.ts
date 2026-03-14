@@ -1,3 +1,4 @@
+/* global afterAll, beforeEach, describe, expect, it, jest, process, require */
 describe("Logger Branch Coverage", () => {
   const originalEnv = process.env.NODE_ENV;
 

@@ -1,3 +1,4 @@
+/* global console, global, jest, process */
 process.env.NODE_ENV = "test";
 
 const originalConsole = console;
@@ -12,3 +13,5 @@ global.console = {
 
 process.env.PORT = "3000";
 process.env.NODE_ENV = "test";
+process.env.DB_SERVICE_URL = "http://db-service.test";
+process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";

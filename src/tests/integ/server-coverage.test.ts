@@ -1,10 +1,9 @@
+/* global afterEach, beforeEach, describe, expect, it, jest, process, require */
 describe("Server Coverage Tests", () => {
-  let originalEnv: string | undefined;
   let originalProcessExit: typeof process.exit;
   let originalProcessOn: typeof process.on;
 
   beforeEach(() => {
-    originalEnv = process.env.NODE_ENV;
     originalProcessExit = process.exit;
     originalProcessOn = process.on;
 
@@ -16,7 +15,6 @@ describe("Server Coverage Tests", () => {
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv;
     process.exit = originalProcessExit;
     process.on = originalProcessOn;
 
@@ -24,9 +22,6 @@ describe("Server Coverage Tests", () => {
   });
 
   it("should test server startup logic in development environment", () => {
-    process.env.NODE_ENV = "development";
-    process.env.PORT = "3000";
-
     const mockServer = {
       close: jest.fn((callback) => {
         if (callback) callback();
@@ -38,11 +33,7 @@ describe("Server Coverage Tests", () => {
         if (callback) callback();
         return mockServer;
       }),
-      get: jest.fn(),
-      disable: jest.fn(),
     };
-
-    jest.doMock("express", () => jest.fn(() => mockApp));
 
     const mockLogger = {
       info: jest.fn(),
@@ -59,12 +50,18 @@ describe("Server Coverage Tests", () => {
       config: {
         nodeEnv: "development",
         port: 3000,
+        dbServiceUrl: "http://db.internal",
+        notificationHandlerUrl: "http://notify.internal",
       },
+    }));
+
+    jest.doMock("../../app", () => ({
+      app: mockApp,
     }));
 
     require("../../index");
 
-    expect(process.env.NODE_ENV).toBe("development");
+    expect(mockApp.listen).toHaveBeenCalledWith(3000, expect.any(Function));
   });
 
   it("should test signal handler registration logic", () => {
@@ -142,8 +139,8 @@ describe("Server Coverage Tests", () => {
     expect(mockLogger.info).toHaveBeenCalledWith(
       `Server started on port ${port}`,
       {
-        environment: environment,
-        port: port,
+        environment,
+        port,
       },
     );
   });

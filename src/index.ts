@@ -1,17 +1,7 @@
-import express from "express";
+/* global process */
 import { config } from "./config/environment";
 import { logger } from "./utils/logger";
-
-const app = express();
-app.disable("x-powered-by");
-
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    environment: config.nodeEnv,
-  });
-});
+import { app } from "./app";
 
 if (config.nodeEnv !== "test") {
   const server = app.listen(config.port, () => {

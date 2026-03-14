@@ -1,3 +1,4 @@
+/* global describe, expect, it, jest */
 import { logger } from "../../../utils/logger";
 
 jest.mock("winston", () => ({
