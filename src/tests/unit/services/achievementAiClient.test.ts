@@ -1,4 +1,4 @@
-/* global afterEach, beforeEach, describe, expect, global, it, jest */
+/* global afterEach, beforeEach, describe, expect, global, it, jest, process */
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import { HttpAiAchievementClient } from "../../../services/achievementAiClient";
 
@@ -41,7 +41,7 @@ describe("achievementAiClient", () => {
     });
 
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://localhost:3003/achievements/suggestions",
+      `${process.env.IA_SERVICE_URL}/achievements/suggestions`,
       expect.objectContaining({
         method: "POST",
       }),
