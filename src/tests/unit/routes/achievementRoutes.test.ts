@@ -6,6 +6,7 @@ describe("achievementRoutes", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
       createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -26,6 +27,7 @@ describe("achievementRoutes", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
       createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -48,6 +50,7 @@ describe("achievementRoutes", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
       createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -66,5 +69,30 @@ describe("achievementRoutes", () => {
     );
 
     expect(deleteRoute?.route?.methods["delete"]).toBe(true);
+  });
+
+  it("should register the deactivate achievement route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const deactivateRoute = stack.find(
+      (layer) =>
+        layer.route?.path === "/:achievementId/deactivate" &&
+        layer.route.methods.patch,
+    );
+
+    expect(deactivateRoute?.route?.methods.patch).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createAchievementHandler,
+  deactivateAchievementHandler,
   deleteAchievementHandler,
   updateAchievementHandler,
 } from "./controllers/achievementController";
@@ -25,6 +26,7 @@ app.use(
   "/achievements",
   achievementRoutes({
     createAchievementHandler,
+    deactivateAchievementHandler,
     deleteAchievementHandler,
     updateAchievementHandler,
   }),

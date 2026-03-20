@@ -1,6 +1,7 @@
 import { Request, RequestHandler, Response } from "express";
 import {
   createAchievement,
+  deactivateAchievement,
   deleteAchievement,
   updateAchievement,
 } from "../services/achievementService";
@@ -53,11 +54,29 @@ function buildDeleteAchievementHandler(
 const deleteAchievementHandler =
   buildDeleteAchievementHandler(deleteAchievement);
 
+function buildDeactivateAchievementHandler(
+  deactivateAchievementAction: typeof deactivateAchievement,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const achievement = await deactivateAchievementAction(
+      req.params.achievementId,
+    );
+
+    res.status(200).json(achievement);
+  };
+}
+
+const deactivateAchievementHandler = buildDeactivateAchievementHandler(
+  deactivateAchievement,
+);
+
 export {
   buildCreateAchievementHandler,
+  buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildUpdateAchievementHandler,
   createAchievementHandler,
+  deactivateAchievementHandler,
   deleteAchievementHandler,
   updateAchievementHandler,
 };

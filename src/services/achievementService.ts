@@ -112,9 +112,42 @@ async function deleteAchievement(achievementId: string): Promise<Achievement> {
   });
 }
 
+async function deactivateAchievementWithDependencies(
+  achievementId: string,
+  dependencies: AchievementServiceDependencies,
+): Promise<Achievement> {
+  const achievement =
+    await dependencies.dbClient.deactivateAchievement(achievementId);
+
+  try {
+    await dependencies.notificationClient.invalidateChannelCache(
+      achievement.channelId,
+    );
+  } catch {
+    throw new ApplicationError(
+      502,
+      "notification_handler_error",
+      "Notification handler cache invalidation failed after achievement deactivation",
+    );
+  }
+
+  return achievement;
+}
+
+async function deactivateAchievement(
+  achievementId: string,
+): Promise<Achievement> {
+  return deactivateAchievementWithDependencies(achievementId, {
+    dbClient: dbAchievementClient,
+    notificationClient: notificationCacheClient,
+  });
+}
+
 export {
   createAchievement,
   createAchievementWithDependencies,
+  deactivateAchievement,
+  deactivateAchievementWithDependencies,
   deleteAchievement,
   deleteAchievementWithDependencies,
   updateAchievement,

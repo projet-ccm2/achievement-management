@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import {
   buildCreateAchievementHandler,
+  buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
@@ -199,6 +200,52 @@ describe("achievementController", () => {
     expect(response.json).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "achievement-1",
+      }),
+    );
+  });
+
+  it("should deactivate the achievement and return the updated payload", async () => {
+    const deactivateAchievement = jest.fn().mockResolvedValue({
+      id: "achievement-1",
+      title: "Deactivated",
+      description: "Desc",
+      goal: 2,
+      reward: 10,
+      label: "",
+      public: false,
+      downloads: 0,
+      visits: 0,
+      active: false,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message",
+        data: null,
+      },
+    });
+    const handler = buildDeactivateAchievementHandler(deactivateAchievement);
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          achievementId: "achievement-1",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(deactivateAchievement).toHaveBeenCalledWith("achievement-1");
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "achievement-1",
+        active: false,
       }),
     );
   });
