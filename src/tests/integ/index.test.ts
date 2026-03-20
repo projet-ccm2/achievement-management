@@ -7,6 +7,7 @@ import {
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
+  getAchievementById,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -25,6 +26,7 @@ jest.mock("../../services/achievementService", () => ({
   createAchievement: jest.fn(),
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
+  getAchievementById: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
@@ -34,6 +36,9 @@ describe("Express App", () => {
   >;
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
+  >;
+  const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
+    typeof getAchievementById
   >;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
@@ -649,6 +654,68 @@ describe("Express App", () => {
         code: "notification_handler_error",
         message:
           "Notification handler cache invalidation failed after achievement activation",
+      });
+    });
+  });
+
+  describe("GET /achievements/:achievementId", () => {
+    it("should return an achievement by id", async () => {
+      getAchievementByIdMock.mockResolvedValue({
+        id: "achievement-1",
+        title: "Fetched title",
+        description: "Fetched description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+
+      const response = await request(app).get("/achievements/achievement-1");
+
+      expect(response.status).toBe(200);
+      expect(getAchievementByIdMock).toHaveBeenCalledWith("achievement-1");
+      expect(response.body).toEqual({
+        id: "achievement-1",
+        title: "Fetched title",
+        description: "Fetched description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+    });
+
+    it("should return not found when the achievement does not exist", async () => {
+      getAchievementByIdMock.mockRejectedValue(
+        new ApplicationError(404, "not_found", "Achievement not found"),
+      );
+
+      const response = await request(app).get("/achievements/achievement-404");
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        code: "not_found",
+        message: "Achievement not found",
       });
     });
   });

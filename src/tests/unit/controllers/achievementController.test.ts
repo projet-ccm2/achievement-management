@@ -5,6 +5,7 @@ import {
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
+  buildGetAchievementByIdHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
 import { ApplicationError } from "../../../middlewares/errorHandler";
@@ -293,6 +294,51 @@ describe("achievementController", () => {
       expect.objectContaining({
         id: "achievement-1",
         active: true,
+      }),
+    );
+  });
+
+  it("should return the achievement by id", async () => {
+    const getAchievementById = jest.fn().mockResolvedValue({
+      id: "achievement-1",
+      title: "Fetched",
+      description: "Desc",
+      goal: 2,
+      reward: 10,
+      label: "",
+      public: false,
+      downloads: 0,
+      visits: 0,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message",
+        data: null,
+      },
+    });
+    const handler = buildGetAchievementByIdHandler(getAchievementById);
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          achievementId: "achievement-1",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(getAchievementById).toHaveBeenCalledWith("achievement-1");
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "achievement-1",
       }),
     );
   });

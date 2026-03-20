@@ -4,6 +4,7 @@ import {
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
+  getAchievementById,
   updateAchievement,
 } from "../services/achievementService";
 import {
@@ -86,15 +87,32 @@ function buildActivateAchievementHandler(
 const activateAchievementHandler =
   buildActivateAchievementHandler(activateAchievement);
 
+function buildGetAchievementByIdHandler(
+  getAchievementByIdAction: typeof getAchievementById,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const achievement = await getAchievementByIdAction(
+      req.params.achievementId,
+    );
+
+    res.status(200).json(achievement);
+  };
+}
+
+const getAchievementByIdHandler =
+  buildGetAchievementByIdHandler(getAchievementById);
+
 export {
   buildActivateAchievementHandler,
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
+  buildGetAchievementByIdHandler,
   buildUpdateAchievementHandler,
   activateAchievementHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
+  getAchievementByIdHandler,
   updateAchievementHandler,
 };

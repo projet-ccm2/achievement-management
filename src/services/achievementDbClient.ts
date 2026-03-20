@@ -10,6 +10,7 @@ import {
 
 /* eslint-disable no-unused-vars */
 type DbAchievementClient = {
+  getAchievementById: (...args: [string]) => Promise<Achievement>;
   createAchievement: (
     ...args: [CreateAchievementRequest]
   ) => Promise<Achievement>;
@@ -57,7 +58,7 @@ async function parseDbResponse(response: Response): Promise<unknown> {
 
 function mapDbError(
   response: Response,
-  operation: "create" | "update" | "delete" | "deactivate" | "activate",
+  operation: "get" | "create" | "update" | "delete" | "deactivate" | "activate",
 ): Error {
   if (response.status === 404) {
     return new ApplicationError(404, "not_found", "Achievement not found");
@@ -71,6 +72,23 @@ function mapDbError(
 }
 
 class HttpDbAchievementClient implements DbAchievementClient {
+  public async getAchievementById(achievementId: string): Promise<Achievement> {
+    const response = await fetch(
+      `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`,
+      {
+        method: "GET",
+      },
+    );
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      throw mapDbError(response, "get");
+    }
+
+    return mapDbAchievementToResponse(body);
+  }
+
   public async createAchievement(
     payload: CreateAchievementRequest,
   ): Promise<Achievement> {
