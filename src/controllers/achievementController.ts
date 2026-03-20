@@ -4,6 +4,7 @@ import {
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
+  generateAchievementSuggestion,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserId,
@@ -12,6 +13,7 @@ import {
   updateAchievement,
 } from "../services/achievementService";
 import {
+  parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
 } from "../utils/achievementPayload";
@@ -29,6 +31,20 @@ function buildCreateAchievementHandler(
 
 const createAchievementHandler =
   buildCreateAchievementHandler(createAchievement);
+
+function buildGenerateAchievementSuggestionHandler(
+  generateAchievementSuggestionAction: typeof generateAchievementSuggestion,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const payload = parseAiSuggestionRequest(req.body);
+    const suggestion = await generateAchievementSuggestionAction(payload);
+
+    res.status(200).json(suggestion);
+  };
+}
+
+const generateAchievementSuggestionHandler =
+  buildGenerateAchievementSuggestionHandler(generateAchievementSuggestion);
 
 function buildUpdateAchievementHandler(
   updateAchievementAction: typeof updateAchievement,
@@ -172,6 +188,7 @@ export {
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
+  buildGenerateAchievementSuggestionHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
   buildGetAchievementsByUserIdHandler,
@@ -182,6 +199,7 @@ export {
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
+  generateAchievementSuggestionHandler,
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
   getAchievementsByUserIdHandler,

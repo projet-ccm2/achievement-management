@@ -1,5 +1,9 @@
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement, UserAchievement } from "../models/achievement";
+import {
+  Achievement,
+  AchievementSuggestion,
+  UserAchievement,
+} from "../models/achievement";
 
 const supportedTriggerLabels = [
   "message",
@@ -44,8 +48,13 @@ interface UpdateAchievementRequest {
   };
 }
 
+interface AiSuggestionRequest {
+  prompt: string;
+}
+
 type CreateAchievementResponse = Achievement;
 type UpdateAchievementResponse = Achievement;
+type AiSuggestionResponse = AchievementSuggestion;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -197,6 +206,20 @@ function parseUpdateAchievementRequest(
   return parseAchievementDefinitionPayload(body);
 }
 
+function parseAiSuggestionRequest(body: unknown): AiSuggestionRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  return {
+    prompt: readRequiredString(body.prompt, "prompt"),
+  };
+}
+
 function parseAchievementDefinitionPayload(
   body: unknown,
 ): Omit<CreateAchievementRequest, "channelId"> {
@@ -335,6 +358,21 @@ function mapDbAchievementsToResponse(body: unknown): Achievement[] {
   return body.map((achievement) => mapDbAchievementToResponse(achievement));
 }
 
+function mapAiSuggestionToResponse(body: unknown): AchievementSuggestion {
+  const parsedSuggestion = parseAchievementDefinitionPayload(body);
+
+  return {
+    title: parsedSuggestion.title,
+    description: parsedSuggestion.description,
+    goal: parsedSuggestion.goal,
+    reward: parsedSuggestion.reward,
+    public: parsedSuggestion.public,
+    active: parsedSuggestion.active,
+    secret: parsedSuggestion.secret,
+    type: parsedSuggestion.type,
+  };
+}
+
 function readOptionalBoolean(
   value: unknown,
   fieldName: string,
@@ -410,11 +448,15 @@ export {
   mapDbAchievementsToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
+  mapAiSuggestionToResponse,
+  parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
 };
 export type {
+  AiSuggestionRequest,
+  AiSuggestionResponse,
   CreateAchievementRequest,
   CreateAchievementResponse,
   UpdateAchievementRequest,

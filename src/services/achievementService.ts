@@ -1,5 +1,13 @@
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement, UserAchievement } from "../models/achievement";
+import {
+  Achievement,
+  AchievementSuggestion,
+  UserAchievement,
+} from "../models/achievement";
+import {
+  aiAchievementClient,
+  AiAchievementClient,
+} from "./achievementAiClient";
 import {
   dbAchievementClient,
   DbAchievementClient,
@@ -9,6 +17,7 @@ import {
   NotificationCacheClient,
 } from "./notificationCacheClient";
 import {
+  AiSuggestionRequest,
   CreateAchievementRequest,
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
@@ -16,6 +25,10 @@ import {
 interface AchievementServiceDependencies {
   dbClient: DbAchievementClient;
   notificationClient: NotificationCacheClient;
+}
+
+interface AchievementAiServiceDependencies {
+  aiClient: AiAchievementClient;
 }
 
 async function createAchievementWithDependencies(
@@ -125,6 +138,21 @@ async function getAchievementsByUserIdAndChannelId(
       dbClient: dbAchievementClient,
     },
   );
+}
+
+async function generateAchievementSuggestionWithDependencies(
+  payload: AiSuggestionRequest,
+  dependencies: AchievementAiServiceDependencies,
+): Promise<AchievementSuggestion> {
+  return dependencies.aiClient.generateAchievementSuggestion(payload);
+}
+
+async function generateAchievementSuggestion(
+  payload: AiSuggestionRequest,
+): Promise<AchievementSuggestion> {
+  return generateAchievementSuggestionWithDependencies(payload, {
+    aiClient: aiAchievementClient,
+  });
 }
 
 async function updateAchievementWithDependencies(
@@ -258,6 +286,8 @@ export {
   activateAchievementWithDependencies,
   createAchievement,
   createAchievementWithDependencies,
+  generateAchievementSuggestion,
+  generateAchievementSuggestionWithDependencies,
   getAchievementById,
   getAchievementByIdWithDependencies,
   getAchievementsByChannelId,

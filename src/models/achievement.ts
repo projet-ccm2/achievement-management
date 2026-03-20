@@ -30,8 +30,20 @@ interface UserAchievement extends Achievement {
   userState: AchievementUserState;
 }
 
+interface AchievementSuggestion {
+  title: string;
+  description: string;
+  goal: number;
+  reward: number;
+  public: boolean;
+  active: boolean;
+  secret: boolean;
+  type: AchievementType;
+}
+
 export type {
   Achievement,
+  AchievementSuggestion,
   AchievementType,
   AchievementUserState,
   UserAchievement,

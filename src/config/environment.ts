@@ -3,6 +3,7 @@ interface Config {
   port: number;
   nodeEnv: string;
   dbServiceUrl: string;
+  aiServiceUrl: string;
   notificationHandlerUrl: string;
   cors: {
     allowedOrigins: string[];
@@ -14,6 +15,7 @@ function validateConfig(): Config {
     port: Number.parseInt(process.env.PORT || "3000", 10),
     nodeEnv: process.env.NODE_ENV || "development",
     dbServiceUrl: process.env.DB_SERVICE_URL || "http://localhost:3001",
+    aiServiceUrl: process.env.IA_SERVICE_URL || "http://localhost:3003",
     notificationHandlerUrl:
       process.env.NOTIFICATION_HANDLER_URL || "http://localhost:3002",
     cors: {

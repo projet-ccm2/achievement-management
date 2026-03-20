@@ -5,6 +5,7 @@ import {
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
+  buildGenerateAchievementSuggestionHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
   buildGetAchievementsByUserIdHandler,
@@ -94,6 +95,44 @@ describe("achievementController", () => {
         jest.fn(),
       ),
     ).rejects.toBeInstanceOf(ApplicationError);
+  });
+
+  it("should parse the prompt request and return an AI suggestion", async () => {
+    const generateAchievementSuggestion = jest.fn().mockResolvedValue({
+      title: "First",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      public: false,
+      active: true,
+      secret: false,
+      type: {
+        label: "message",
+        data: null,
+      },
+    });
+    const handler = buildGenerateAchievementSuggestionHandler(
+      generateAchievementSuggestion,
+    );
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        body: {
+          prompt: " First achievement suggestion ",
+        },
+      } as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(generateAchievementSuggestion).toHaveBeenCalledWith({
+      prompt: "First achievement suggestion",
+    });
+    expect(response.status).toHaveBeenCalledWith(200);
   });
 
   it("should parse the update request and return the updated achievement", async () => {

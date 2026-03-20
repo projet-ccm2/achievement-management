@@ -17,6 +17,7 @@ describe("Environment Configuration", () => {
       delete process.env.NODE_ENV;
       delete process.env.ALLOWED_ORIGINS;
       delete process.env.DB_SERVICE_URL;
+      delete process.env.IA_SERVICE_URL;
       delete process.env.NOTIFICATION_HANDLER_URL;
 
       const { config } = require("../../../config/environment");
@@ -24,6 +25,7 @@ describe("Environment Configuration", () => {
       expect(config.port).toBe(3000);
       expect(config.nodeEnv).toBe("development");
       expect(config.dbServiceUrl).toBe("http://localhost:3001");
+      expect(config.aiServiceUrl).toBe("http://localhost:3003");
       expect(config.notificationHandlerUrl).toBe("http://localhost:3002");
       expect(config.cors.allowedOrigins).toEqual([
         "http://localhost:3000",
@@ -37,6 +39,7 @@ describe("Environment Configuration", () => {
       process.env.NODE_ENV = "production";
       process.env.ALLOWED_ORIGINS = "https://example.com,https://test.com";
       process.env.DB_SERVICE_URL = "http://db.internal";
+      process.env.IA_SERVICE_URL = "http://ai.internal";
       process.env.NOTIFICATION_HANDLER_URL = "http://notify.internal";
 
       const { config } = require("../../../config/environment");
@@ -44,6 +47,7 @@ describe("Environment Configuration", () => {
       expect(config.port).toBe(8080);
       expect(config.nodeEnv).toBe("production");
       expect(config.dbServiceUrl).toBe("http://db.internal");
+      expect(config.aiServiceUrl).toBe("http://ai.internal");
       expect(config.notificationHandlerUrl).toBe("http://notify.internal");
       expect(config.cors.allowedOrigins).toEqual([
         "https://example.com",
@@ -88,6 +92,7 @@ describe("Environment Configuration", () => {
       expect(config).toHaveProperty("port");
       expect(config).toHaveProperty("nodeEnv");
       expect(config).toHaveProperty("dbServiceUrl");
+      expect(config).toHaveProperty("aiServiceUrl");
       expect(config).toHaveProperty("notificationHandlerUrl");
       expect(config).toHaveProperty("cors");
 
@@ -96,6 +101,7 @@ describe("Environment Configuration", () => {
       expect(typeof config.port).toBe("number");
       expect(typeof config.nodeEnv).toBe("string");
       expect(typeof config.dbServiceUrl).toBe("string");
+      expect(typeof config.aiServiceUrl).toBe("string");
       expect(typeof config.notificationHandlerUrl).toBe("string");
       expect(Array.isArray(config.cors.allowedOrigins)).toBe(true);
     });

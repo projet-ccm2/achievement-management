@@ -1,9 +1,11 @@
 /* global describe, expect, it */
 import {
+  mapAiSuggestionToResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
+  parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
@@ -100,6 +102,26 @@ describe("achievementPayload", () => {
 
   it("should reject non object payloads", () => {
     expect(() => parseCreateAchievementRequest(null)).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "Request body must be an object",
+      ),
+    );
+  });
+
+  it("should parse a valid AI suggestion prompt request", () => {
+    expect(
+      parseAiSuggestionRequest({
+        prompt: " Create an achievement suggestion ",
+      }),
+    ).toEqual({
+      prompt: "Create an achievement suggestion",
+    });
+  });
+
+  it("should reject non object AI suggestion prompt requests", () => {
+    expect(() => parseAiSuggestionRequest(null)).toThrow(
       new ApplicationError(
         400,
         "validation_error",
@@ -411,6 +433,36 @@ describe("achievementPayload", () => {
         "DB service returned an invalid achievement payload",
       ),
     );
+  });
+
+  it("should map a valid AI suggestion response", () => {
+    expect(
+      mapAiSuggestionToResponse({
+        title: " First ",
+        description: " Desc ",
+        goal: 10,
+        reward: 5,
+        public: false,
+        active: true,
+        secret: false,
+        type: {
+          label: "Message Content",
+          data: " keyword ",
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 10,
+      reward: 5,
+      public: false,
+      active: true,
+      secret: false,
+      type: {
+        label: "message_content",
+        data: "keyword",
+      },
+    });
   });
 
   it("should map a DB achievement list response", () => {

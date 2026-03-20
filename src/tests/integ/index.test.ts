@@ -7,6 +7,7 @@ import {
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
+  generateAchievementSuggestion,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserIdAndChannelId,
@@ -30,6 +31,7 @@ jest.mock("../../services/achievementService", () => ({
   createAchievement: jest.fn(),
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
+  generateAchievementSuggestion: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
   getAchievementsByUserIdAndChannelId: jest.fn(),
@@ -45,6 +47,10 @@ describe("Express App", () => {
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
   >;
+  const generateAchievementSuggestionMock =
+    generateAchievementSuggestion as jest.MockedFunction<
+      typeof generateAchievementSuggestion
+    >;
   const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
     typeof getAchievementById
   >;
@@ -274,6 +280,85 @@ describe("Express App", () => {
         code: "notification_handler_error",
         message:
           "Notification handler cache invalidation failed after achievement creation",
+      });
+    });
+  });
+
+  describe("POST /achievements/ai-suggestion", () => {
+    it("should return an AI suggestion", async () => {
+      generateAchievementSuggestionMock.mockResolvedValue({
+        title: "Suggested title",
+        description: "Suggested description",
+        goal: 100,
+        reward: 250,
+        public: false,
+        active: true,
+        secret: false,
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+
+      const response = await request(app)
+        .post("/achievements/ai-suggestion")
+        .send({
+          prompt: " Create an achievement for 100 messages ",
+        });
+
+      expect(response.status).toBe(200);
+      expect(generateAchievementSuggestionMock).toHaveBeenCalledWith({
+        prompt: "Create an achievement for 100 messages",
+      });
+      expect(response.body).toEqual({
+        title: "Suggested title",
+        description: "Suggested description",
+        goal: 100,
+        reward: 250,
+        public: false,
+        active: true,
+        secret: false,
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+    });
+
+    it("should reject an invalid AI prompt payload", async () => {
+      const response = await request(app)
+        .post("/achievements/ai-suggestion")
+        .send({
+          prompt: " ",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "prompt is required",
+      });
+      expect(generateAchievementSuggestionMock).not.toHaveBeenCalled();
+    });
+
+    it("should return AI service failures", async () => {
+      generateAchievementSuggestionMock.mockRejectedValue(
+        new ApplicationError(
+          502,
+          "ai_service_error",
+          "AI service returned an unusable achievement suggestion",
+        ),
+      );
+
+      const response = await request(app)
+        .post("/achievements/ai-suggestion")
+        .send({
+          prompt: "Any prompt",
+        });
+
+      expect(response.status).toBe(502);
+      expect(response.body).toEqual({
+        code: "ai_service_error",
+        message: "AI service returned an unusable achievement suggestion",
       });
     });
   });

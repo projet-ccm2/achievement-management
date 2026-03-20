@@ -5,6 +5,7 @@ import {
   createAchievementWithDependencies,
   deactivateAchievementWithDependencies,
   deleteAchievementWithDependencies,
+  generateAchievementSuggestionWithDependencies,
   getAchievementByIdWithDependencies,
   getAchievementsByChannelIdWithDependencies,
   getAchievementsByUserIdAndChannelIdWithDependencies,
@@ -1342,5 +1343,69 @@ describe("achievementService", () => {
     );
     expect(achievements).toHaveLength(1);
     expect(achievements[0]?.channelId).toBe("channel-1");
+  });
+
+  it("should use the default dependencies in generateAchievementSuggestion", async () => {
+    jest.resetModules();
+
+    const suggestion = {
+      title: "Suggested title",
+      description: "Suggested description",
+      goal: 100,
+      reward: 250,
+      public: false,
+      active: true,
+      secret: false,
+      type: {
+        label: "message",
+        data: null,
+      },
+    };
+
+    jest.doMock("../../../services/achievementAiClient", () => ({
+      aiAchievementClient: {
+        generateAchievementSuggestion: jest.fn().mockResolvedValue(suggestion),
+      },
+    }));
+
+    const {
+      generateAchievementSuggestion,
+    } = require("../../../services/achievementService");
+
+    await expect(
+      generateAchievementSuggestion({ prompt: "Create an achievement" }),
+    ).resolves.toEqual(suggestion);
+  });
+
+  it("should generate an achievement suggestion through dependencies", async () => {
+    const aiClient = {
+      generateAchievementSuggestion: jest.fn().mockResolvedValue({
+        title: "Suggested title",
+        description: "Suggested description",
+        goal: 100,
+        reward: 250,
+        public: false,
+        active: true,
+        secret: false,
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    };
+
+    const suggestion = await generateAchievementSuggestionWithDependencies(
+      {
+        prompt: "Create an achievement",
+      },
+      {
+        aiClient,
+      },
+    );
+
+    expect(aiClient.generateAchievementSuggestion).toHaveBeenCalledWith({
+      prompt: "Create an achievement",
+    });
+    expect(suggestion.goal).toBe(100);
   });
 });

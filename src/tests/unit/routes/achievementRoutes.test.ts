@@ -9,6 +9,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -29,6 +30,37 @@ describe("achievementRoutes", () => {
     expect(createRoute?.route?.methods.post).toBe(true);
   });
 
+  it("should register the AI suggestion route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      activateAchievementHandler: handler,
+      createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
+      getAchievementByIdHandler: handler,
+      getAchievementsByChannelIdHandler: handler,
+      getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const aiRoute = stack.find(
+      (layer) =>
+        layer.route?.path === "/ai-suggestion" && layer.route.methods.post,
+    );
+
+    expect(aiRoute?.route?.methods.post).toBe(true);
+  });
+
   it("should register the update achievement route", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
@@ -36,6 +68,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -66,6 +99,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -97,6 +131,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -128,6 +163,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -159,6 +195,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -189,6 +226,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -219,6 +257,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -248,6 +287,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
@@ -278,6 +318,7 @@ describe("achievementRoutes", () => {
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
+      generateAchievementSuggestionHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,

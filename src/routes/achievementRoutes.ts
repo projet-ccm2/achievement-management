@@ -2,6 +2,7 @@ import { RequestHandler, Router } from "express";
 
 interface AchievementRouteHandlers {
   activateAchievementHandler: RequestHandler;
+  generateAchievementSuggestionHandler: RequestHandler;
   createAchievementHandler: RequestHandler;
   updateAchievementHandler: RequestHandler;
   deleteAchievementHandler: RequestHandler;
@@ -16,6 +17,7 @@ interface AchievementRouteHandlers {
 function achievementRoutes(handlers: AchievementRouteHandlers): Router {
   const router = Router();
 
+  router.post("/ai-suggestion", handlers.generateAchievementSuggestionHandler);
   router.post("/", handlers.createAchievementHandler);
   router.get("/public", handlers.getPublicAchievementsHandler);
   router.get("/channel/:channelId", handlers.getAchievementsByChannelIdHandler);
