@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import {
   buildCreateAchievementHandler,
+  buildDeleteAchievementHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
 import { ApplicationError } from "../../../middlewares/errorHandler";
@@ -155,5 +156,50 @@ describe("achievementController", () => {
       },
     });
     expect(response.status).toHaveBeenCalledWith(200);
+  });
+
+  it("should delete the achievement and return the deleted payload", async () => {
+    const deleteAchievement = jest.fn().mockResolvedValue({
+      id: "achievement-1",
+      title: "Deleted",
+      description: "Desc",
+      goal: 2,
+      reward: 10,
+      label: "",
+      public: false,
+      downloads: 0,
+      visits: 0,
+      active: false,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message",
+        data: null,
+      },
+    });
+    const handler = buildDeleteAchievementHandler(deleteAchievement);
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          achievementId: "achievement-1",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(deleteAchievement).toHaveBeenCalledWith("achievement-1");
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "achievement-1",
+      }),
+    );
   });
 });

@@ -4,6 +4,7 @@ import { app } from "../../app";
 import { config } from "../../config/environment";
 import {
   createAchievement,
+  deleteAchievement,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -19,12 +20,16 @@ jest.mock("../../utils/logger", () => ({
 
 jest.mock("../../services/achievementService", () => ({
   createAchievement: jest.fn(),
+  deleteAchievement: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
 describe("Express App", () => {
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
+  >;
+  const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
+    typeof deleteAchievement
   >;
   const updateAchievementMock = updateAchievement as jest.MockedFunction<
     typeof updateAchievement
@@ -378,6 +383,89 @@ describe("Express App", () => {
         code: "notification_handler_error",
         message:
           "Notification handler cache invalidation failed after achievement update",
+      });
+    });
+  });
+
+  describe("DELETE /achievements/:achievementId", () => {
+    it("should delete an achievement and return the stable response", async () => {
+      deleteAchievementMock.mockResolvedValue({
+        id: "achievement-1",
+        title: "Deleted title",
+        description: "Deleted description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: false,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+
+      const response = await request(app).delete("/achievements/achievement-1");
+
+      expect(response.status).toBe(200);
+      expect(deleteAchievementMock).toHaveBeenCalledWith("achievement-1");
+      expect(response.body).toEqual({
+        id: "achievement-1",
+        title: "Deleted title",
+        description: "Deleted description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: false,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+    });
+
+    it("should return not found when the deleted achievement does not exist", async () => {
+      deleteAchievementMock.mockRejectedValue(
+        new ApplicationError(404, "not_found", "Achievement not found"),
+      );
+
+      const response = await request(app).delete(
+        "/achievements/achievement-404",
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        code: "not_found",
+        message: "Achievement not found",
+      });
+    });
+
+    it("should return notification handler failures on delete", async () => {
+      deleteAchievementMock.mockRejectedValue(
+        new ApplicationError(
+          502,
+          "notification_handler_error",
+          "Notification handler cache invalidation failed after achievement deletion",
+        ),
+      );
+
+      const response = await request(app).delete("/achievements/achievement-1");
+
+      expect(response.status).toBe(502);
+      expect(response.body).toEqual({
+        code: "notification_handler_error",
+        message:
+          "Notification handler cache invalidation failed after achievement deletion",
       });
     });
   });
