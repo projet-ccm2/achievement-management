@@ -13,6 +13,7 @@ import {
 type DbAchievementClient = {
   getAchievementById: (...args: [string]) => Promise<Achievement>;
   getAchievementsByChannelId: (...args: [string]) => Promise<Achievement[]>;
+  getPublicAchievements: () => Promise<Achievement[]>;
   createAchievement: (
     ...args: [CreateAchievementRequest]
   ) => Promise<Achievement>;
@@ -100,6 +101,20 @@ class HttpDbAchievementClient implements DbAchievementClient {
         method: "GET",
       },
     );
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      throw mapDbError(response, "get");
+    }
+
+    return mapDbAchievementsToResponse(body);
+  }
+
+  public async getPublicAchievements(): Promise<Achievement[]> {
+    const response = await fetch(`${config.dbServiceUrl}/achievements/public`, {
+      method: "GET",
+    });
 
     const body = await parseDbResponse(response);
 

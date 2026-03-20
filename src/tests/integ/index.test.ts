@@ -9,6 +9,7 @@ import {
   deleteAchievement,
   getAchievementById,
   getAchievementsByChannelId,
+  getPublicAchievements,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -29,6 +30,7 @@ jest.mock("../../services/achievementService", () => ({
   deleteAchievement: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
+  getPublicAchievements: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
@@ -46,6 +48,8 @@ describe("Express App", () => {
     getAchievementsByChannelId as jest.MockedFunction<
       typeof getAchievementsByChannelId
     >;
+  const getPublicAchievementsMock =
+    getPublicAchievements as jest.MockedFunction<typeof getPublicAchievements>;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
   const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
@@ -785,6 +789,67 @@ describe("Express App", () => {
       const response = await request(app).get(
         "/achievements/channel/channel-1",
       );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /achievements/public", () => {
+    it("should return public achievements", async () => {
+      getPublicAchievementsMock.mockResolvedValue([
+        {
+          id: "achievement-1",
+          title: "Public title",
+          description: "Public description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: true,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        },
+      ]);
+
+      const response = await request(app).get("/achievements/public");
+
+      expect(response.status).toBe(200);
+      expect(getPublicAchievementsMock).toHaveBeenCalledWith();
+      expect(response.body).toEqual([
+        {
+          id: "achievement-1",
+          title: "Public title",
+          description: "Public description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: true,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        },
+      ]);
+    });
+
+    it("should return an empty list when there are no public achievements", async () => {
+      getPublicAchievementsMock.mockResolvedValue([]);
+
+      const response = await request(app).get("/achievements/public");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);

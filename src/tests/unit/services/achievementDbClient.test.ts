@@ -581,6 +581,92 @@ describe("achievementDbClient", () => {
     expect(achievements).toHaveLength(1);
   });
 
+  it("should get public achievements through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue([
+        {
+          ["Achievement_ID"]: "achievement-1",
+          ["Achievement_Title"]: "Public",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 2,
+          ["Achievement_Reward"]: 10,
+          ["Achievement_Label"]: "",
+          ["Achievement_Public"]: true,
+          ["Achievement_Downloads"]: 0,
+          ["Achievement_Visits"]: 0,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Achievement_Image"]: null,
+          ["Chanel_ID"]: "channel-1",
+          ["Type"]: {
+            ["Type_Label"]: "message",
+            ["Type_Data"]: null,
+          },
+        },
+      ]),
+    });
+
+    const client = new HttpDbAchievementClient();
+    const achievements = await client.getPublicAchievements();
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/achievements/public",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+    expect(achievements).toHaveLength(1);
+    expect(achievements[0]?.public).toBe(true);
+  });
+
+  it("should reject invalid public achievement list payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        invalid: true,
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getPublicAchievements()).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement list payload",
+      ),
+    );
+  });
+
+  it("should map public list DB service failures", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        message: "failure",
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getPublicAchievements()).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service could not get the achievement",
+      ),
+    );
+  });
+
   it("should reject invalid achievement list payloads", async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,

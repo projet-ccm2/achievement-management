@@ -6,6 +6,7 @@ import {
   deleteAchievementHandler,
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
+  getPublicAchievementsHandler,
   updateAchievementHandler,
 } from "./controllers/achievementController";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -34,6 +35,7 @@ app.use(
     deleteAchievementHandler,
     getAchievementByIdHandler,
     getAchievementsByChannelIdHandler,
+    getPublicAchievementsHandler,
     updateAchievementHandler,
   }),
 );

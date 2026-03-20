@@ -7,6 +7,7 @@ import {
   deleteAchievementWithDependencies,
   getAchievementByIdWithDependencies,
   getAchievementsByChannelIdWithDependencies,
+  getPublicAchievementsWithDependencies,
   updateAchievementWithDependencies,
 } from "../../../services/achievementService";
 
@@ -55,6 +56,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
     };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
@@ -99,6 +101,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
     };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockRejectedValue(new Error("boom")),
@@ -149,6 +152,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -198,6 +202,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn().mockResolvedValue(updatedAchievement),
       },
     }));
@@ -238,6 +243,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn().mockResolvedValue({
         id: "achievement-1",
         title: "Updated",
@@ -314,6 +320,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn().mockResolvedValue({
         id: "achievement-1",
         title: "Updated",
@@ -401,6 +408,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn().mockResolvedValue(deletedAchievement),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -445,6 +453,7 @@ describe("achievementService", () => {
       }),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -492,6 +501,7 @@ describe("achievementService", () => {
       }),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -545,6 +555,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -589,6 +600,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -638,6 +650,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -689,6 +702,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -733,6 +747,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -780,6 +795,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
     const notificationClient = {
@@ -831,6 +847,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn().mockResolvedValue(fetchedAchievement),
         getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -870,6 +887,7 @@ describe("achievementService", () => {
         },
       }),
       getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
 
@@ -919,6 +937,7 @@ describe("achievementService", () => {
         getAchievementsByChannelId: jest
           .fn()
           .mockResolvedValue(fetchedAchievements),
+        getPublicAchievements: jest.fn(),
         updateAchievement: jest.fn(),
       },
     }));
@@ -960,6 +979,7 @@ describe("achievementService", () => {
           },
         },
       ]),
+      getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
 
@@ -974,5 +994,91 @@ describe("achievementService", () => {
       "channel-1",
     );
     expect(achievements).toHaveLength(1);
+  });
+
+  it("should use the default dependencies in getPublicAchievements", async () => {
+    jest.resetModules();
+
+    const fetchedAchievements = [
+      {
+        id: "achievement-1",
+        title: "Public",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: true,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      },
+    ];
+
+    jest.doMock("../../../services/achievementDbClient", () => ({
+      dbAchievementClient: {
+        createAchievement: jest.fn(),
+        activateAchievement: jest.fn(),
+        deactivateAchievement: jest.fn(),
+        deleteAchievement: jest.fn(),
+        getAchievementById: jest.fn(),
+        getAchievementsByChannelId: jest.fn(),
+        getPublicAchievements: jest.fn().mockResolvedValue(fetchedAchievements),
+        updateAchievement: jest.fn(),
+      },
+    }));
+
+    const {
+      getPublicAchievements,
+    } = require("../../../services/achievementService");
+
+    await expect(getPublicAchievements()).resolves.toEqual(fetchedAchievements);
+  });
+
+  it("should get public achievements through dependencies", async () => {
+    const dbClient = {
+      createAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getPublicAchievements: jest.fn().mockResolvedValue([
+        {
+          id: "achievement-1",
+          title: "Public",
+          description: "Desc",
+          goal: 2,
+          reward: 10,
+          label: "",
+          public: true,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        },
+      ]),
+      updateAchievement: jest.fn(),
+    };
+
+    const achievements = await getPublicAchievementsWithDependencies({
+      dbClient,
+    });
+
+    expect(dbClient.getPublicAchievements).toHaveBeenCalledWith();
+    expect(achievements).toHaveLength(1);
+    expect(achievements[0]?.public).toBe(true);
   });
 });

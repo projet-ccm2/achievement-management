@@ -11,6 +11,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -35,6 +36,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -62,6 +64,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -90,6 +93,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -118,6 +122,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -146,6 +151,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -173,6 +179,7 @@ describe("achievementRoutes", () => {
       deleteAchievementHandler: handler,
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -186,6 +193,33 @@ describe("achievementRoutes", () => {
     const getRoute = stack.find(
       (layer) =>
         layer.route?.path === "/channel/:channelId" && layer.route.methods.get,
+    );
+
+    expect(getRoute?.route?.methods.get).toBe(true);
+  });
+
+  it("should register the get public achievements route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      activateAchievementHandler: handler,
+      createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      getAchievementByIdHandler: handler,
+      getAchievementsByChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const getRoute = stack.find(
+      (layer) => layer.route?.path === "/public" && layer.route.methods.get,
     );
 
     expect(getRoute?.route?.methods.get).toBe(true);

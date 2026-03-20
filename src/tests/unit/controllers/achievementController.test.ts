@@ -7,6 +7,7 @@ import {
   buildDeleteAchievementHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
+  buildGetPublicAchievementsHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
 import { ApplicationError } from "../../../middlewares/errorHandler";
@@ -390,6 +391,48 @@ describe("achievementController", () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: "achievement-1",
+        }),
+      ]),
+    );
+  });
+
+  it("should return public achievements", async () => {
+    const getPublicAchievements = jest.fn().mockResolvedValue([
+      {
+        id: "achievement-1",
+        title: "Public",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: true,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      },
+    ]);
+    const handler = buildGetPublicAchievementsHandler(getPublicAchievements);
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler({} as Request, response, jest.fn());
+
+    expect(getPublicAchievements).toHaveBeenCalledWith();
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "achievement-1",
+          public: true,
         }),
       ]),
     );
