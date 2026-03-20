@@ -95,339 +95,227 @@ function mapDbError(
   );
 }
 
+interface DbRequestOptions {
+  url: string;
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  operation: "get" | "create" | "update" | "delete" | "deactivate" | "activate";
+  requestBody?: Record<string, unknown>;
+  logOperation: string;
+  networkErrorMessage: string;
+  timeoutErrorMessage: string;
+}
+
+/* eslint-disable no-unused-vars */
+type DbResponseMapper<T> = (...args: [unknown]) => T;
+/* eslint-enable no-unused-vars */
+
 class HttpDbAchievementClient implements DbAchievementClient {
-  public async getAchievementById(achievementId: string): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`;
+  private async requestDb<T>(
+    options: DbRequestOptions,
+    mapBody: DbResponseMapper<T>,
+  ): Promise<T> {
     const response = await timedFetch({
-      url,
-      method: "GET",
+      url: options.url,
+      method: options.method,
       serviceName: "db-service",
       timeoutMs: config.externalRequestTimeoutMs,
       errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not get the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while getting the achievement",
-      init: {
-        method: "GET",
-      },
+      networkErrorMessage: options.networkErrorMessage,
+      timeoutErrorMessage: options.timeoutErrorMessage,
+      init: options.requestBody
+        ? {
+            method: options.method,
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(options.requestBody),
+          }
+        : {
+            method: options.method,
+          },
     });
 
     const body = await parseDbResponse(response);
 
     if (!response.ok) {
       logger.error("DB service returned an error response", {
-        operation: "getAchievementById",
-        method: "GET",
-        url,
+        operation: options.logOperation,
+        method: options.method,
+        url: options.url,
         status: response.status,
       });
-      throw mapDbError(response, "get");
+      throw mapDbError(response, options.operation);
     }
 
-    return mapDbAchievementToResponse(body);
+    return mapBody(body);
+  }
+
+  public async getAchievementById(achievementId: string): Promise<Achievement> {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`,
+        method: "GET",
+        operation: "get",
+        logOperation: "getAchievementById",
+        networkErrorMessage: "DB service could not get the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement",
+      },
+      mapDbAchievementToResponse,
+    );
   }
 
   public async getAchievementsByChannelId(
     channelId: string,
   ): Promise<Achievement[]> {
-    const url = `${config.dbServiceUrl}/achievements/channel/${encodeURIComponent(channelId)}`;
-    const response = await timedFetch({
-      url,
-      method: "GET",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not get the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while getting the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/channel/${encodeURIComponent(channelId)}`,
         method: "GET",
+        operation: "get",
+        logOperation: "getAchievementsByChannelId",
+        networkErrorMessage: "DB service could not get the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "getAchievementsByChannelId",
-        method: "GET",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "get");
-    }
-
-    return mapDbAchievementsToResponse(body);
+      mapDbAchievementsToResponse,
+    );
   }
 
   public async getPublicAchievements(): Promise<Achievement[]> {
-    const url = `${config.dbServiceUrl}/achievements/public`;
-    const response = await timedFetch({
-      url,
-      method: "GET",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not get the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while getting the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/public`,
         method: "GET",
+        operation: "get",
+        logOperation: "getPublicAchievements",
+        networkErrorMessage: "DB service could not get the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "getPublicAchievements",
-        method: "GET",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "get");
-    }
-
-    return mapDbAchievementsToResponse(body);
+      mapDbAchievementsToResponse,
+    );
   }
 
   public async getAchievementsByUserId(
     userId: string,
   ): Promise<UserAchievement[]> {
-    const url = `${config.dbServiceUrl}/achievements/user/${encodeURIComponent(userId)}`;
-    const response = await timedFetch({
-      url,
-      method: "GET",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not get the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while getting the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/user/${encodeURIComponent(userId)}`,
         method: "GET",
+        operation: "get",
+        logOperation: "getAchievementsByUserId",
+        networkErrorMessage: "DB service could not get the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "getAchievementsByUserId",
-        method: "GET",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "get");
-    }
-
-    return mapDbUserAchievementsToResponse(body);
+      mapDbUserAchievementsToResponse,
+    );
   }
 
   public async getAchievementsByUserIdAndChannelId(
     userId: string,
     channelId: string,
   ): Promise<UserAchievement[]> {
-    const url = `${config.dbServiceUrl}/achievements/user/${encodeURIComponent(userId)}/channel/${encodeURIComponent(channelId)}`;
-    const response = await timedFetch({
-      url,
-      method: "GET",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not get the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while getting the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/user/${encodeURIComponent(userId)}/channel/${encodeURIComponent(channelId)}`,
         method: "GET",
+        operation: "get",
+        logOperation: "getAchievementsByUserIdAndChannelId",
+        networkErrorMessage: "DB service could not get the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "getAchievementsByUserIdAndChannelId",
-        method: "GET",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "get");
-    }
-
-    return mapDbUserAchievementsToResponse(body);
+      mapDbUserAchievementsToResponse,
+    );
   }
 
   public async createAchievement(
     payload: CreateAchievementRequest,
   ): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements`;
-    const response = await timedFetch({
-      url,
-      method: "POST",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not create the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while creating the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements`,
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(buildDbPayload(payload)),
+        operation: "create",
+        logOperation: "createAchievement",
+        requestBody: buildDbPayload(payload),
+        networkErrorMessage: "DB service could not create the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while creating the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "createAchievement",
-        method: "POST",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "create");
-    }
-
-    return mapDbAchievementToResponse(body);
+      mapDbAchievementToResponse,
+    );
   }
 
   public async updateAchievement(
     achievementId: string,
     payload: UpdateAchievementRequest,
   ): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`;
-    const response = await timedFetch({
-      url,
-      method: "PUT",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not update the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while updating the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`,
         method: "PUT",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(buildDbUpdatePayload(payload)),
+        operation: "update",
+        logOperation: "updateAchievement",
+        requestBody: buildDbUpdatePayload(payload),
+        networkErrorMessage: "DB service could not update the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while updating the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "updateAchievement",
-        method: "PUT",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "update");
-    }
-
-    return mapDbAchievementToResponse(body);
+      mapDbAchievementToResponse,
+    );
   }
 
   public async deleteAchievement(achievementId: string): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`;
-    const response = await timedFetch({
-      url,
-      method: "DELETE",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not delete the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while deleting the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`,
         method: "DELETE",
+        operation: "delete",
+        logOperation: "deleteAchievement",
+        networkErrorMessage: "DB service could not delete the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while deleting the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "deleteAchievement",
-        method: "DELETE",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "delete");
-    }
-
-    return mapDbAchievementToResponse(body);
+      mapDbAchievementToResponse,
+    );
   }
 
   public async deactivateAchievement(
     achievementId: string,
   ): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}/deactivate`;
-    const response = await timedFetch({
-      url,
-      method: "PATCH",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not deactivate the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while deactivating the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}/deactivate`,
         method: "PATCH",
+        operation: "deactivate",
+        logOperation: "deactivateAchievement",
+        networkErrorMessage: "DB service could not deactivate the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while deactivating the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "deactivateAchievement",
-        method: "PATCH",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "deactivate");
-    }
-
-    return mapDbAchievementToResponse(body);
+      mapDbAchievementToResponse,
+    );
   }
 
   public async activateAchievement(
     achievementId: string,
   ): Promise<Achievement> {
-    const url = `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}/activate`;
-    const response = await timedFetch({
-      url,
-      method: "PATCH",
-      serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
-      errorCode: "db_service_error",
-      networkErrorMessage: "DB service could not activate the achievement",
-      timeoutErrorMessage:
-        "DB service request timed out while activating the achievement",
-      init: {
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}/activate`,
         method: "PATCH",
+        operation: "activate",
+        logOperation: "activateAchievement",
+        networkErrorMessage: "DB service could not activate the achievement",
+        timeoutErrorMessage:
+          "DB service request timed out while activating the achievement",
       },
-    });
-
-    const body = await parseDbResponse(response);
-
-    if (!response.ok) {
-      logger.error("DB service returned an error response", {
-        operation: "activateAchievement",
-        method: "PATCH",
-        url,
-        status: response.status,
-      });
-      throw mapDbError(response, "activate");
-    }
-
-    return mapDbAchievementToResponse(body);
+      mapDbAchievementToResponse,
+    );
   }
 }
 
