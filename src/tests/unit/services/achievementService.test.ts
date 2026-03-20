@@ -2,6 +2,7 @@
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import {
   createAchievementWithDependencies,
+  deleteAchievementWithDependencies,
   updateAchievementWithDependencies,
 } from "../../../services/achievementService";
 
@@ -45,6 +46,7 @@ describe("achievementService", () => {
         },
       }),
       updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
     };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
@@ -84,6 +86,7 @@ describe("achievementService", () => {
         },
       }),
       updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
     };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockRejectedValue(new Error("boom")),
@@ -129,6 +132,8 @@ describe("achievementService", () => {
     jest.doMock("../../../services/achievementDbClient", () => ({
       dbAchievementClient: {
         createAchievement: jest.fn().mockResolvedValue(createdAchievement),
+        deleteAchievement: jest.fn(),
+        updateAchievement: jest.fn(),
       },
     }));
     jest.doMock("../../../services/notificationCacheClient", () => ({
@@ -172,6 +177,7 @@ describe("achievementService", () => {
     jest.doMock("../../../services/achievementDbClient", () => ({
       dbAchievementClient: {
         createAchievement: jest.fn(),
+        deleteAchievement: jest.fn(),
         updateAchievement: jest.fn().mockResolvedValue(updatedAchievement),
       },
     }));
@@ -207,6 +213,7 @@ describe("achievementService", () => {
   it("should update and invalidate the cache", async () => {
     const dbClient = {
       createAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
       updateAchievement: jest.fn().mockResolvedValue({
         id: "achievement-1",
         title: "Updated",
@@ -278,6 +285,7 @@ describe("achievementService", () => {
   it("should surface notification invalidation failures after update", async () => {
     const dbClient = {
       createAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
       updateAchievement: jest.fn().mockResolvedValue({
         id: "achievement-1",
         title: "Updated",
@@ -330,6 +338,136 @@ describe("achievementService", () => {
         502,
         "notification_handler_error",
         "Notification handler cache invalidation failed after achievement update",
+      ),
+    );
+  });
+
+  it("should use the default dependencies in deleteAchievement", async () => {
+    jest.resetModules();
+
+    const deletedAchievement = {
+      id: "achievement-1",
+      title: "Deleted",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      label: "",
+      public: false,
+      downloads: 0,
+      visits: 0,
+      active: false,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message",
+        data: null,
+      },
+    };
+
+    jest.doMock("../../../services/achievementDbClient", () => ({
+      dbAchievementClient: {
+        createAchievement: jest.fn(),
+        deleteAchievement: jest.fn().mockResolvedValue(deletedAchievement),
+        updateAchievement: jest.fn(),
+      },
+    }));
+    jest.doMock("../../../services/notificationCacheClient", () => ({
+      notificationCacheClient: {
+        invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+      },
+    }));
+
+    const {
+      deleteAchievement,
+    } = require("../../../services/achievementService");
+
+    await expect(deleteAchievement("achievement-1")).resolves.toEqual(
+      deletedAchievement,
+    );
+  });
+
+  it("should delete and invalidate the cache", async () => {
+    const dbClient = {
+      createAchievement: jest.fn(),
+      deleteAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "Deleted",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: false,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const achievement = await deleteAchievementWithDependencies(
+      "achievement-1",
+      {
+        dbClient,
+        notificationClient,
+      },
+    );
+
+    expect(dbClient.deleteAchievement).toHaveBeenCalledWith("achievement-1");
+    expect(notificationClient.invalidateChannelCache).toHaveBeenCalledWith(
+      "channel-1",
+    );
+    expect(achievement.id).toBe("achievement-1");
+  });
+
+  it("should surface notification invalidation failures after delete", async () => {
+    const dbClient = {
+      createAchievement: jest.fn(),
+      deleteAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "Deleted",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: false,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockRejectedValue(new Error("boom")),
+    };
+
+    await expect(
+      deleteAchievementWithDependencies("achievement-1", {
+        dbClient,
+        notificationClient,
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "notification_handler_error",
+        "Notification handler cache invalidation failed after achievement deletion",
       ),
     );
   });

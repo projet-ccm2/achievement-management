@@ -83,9 +83,40 @@ async function updateAchievement(
   });
 }
 
+async function deleteAchievementWithDependencies(
+  achievementId: string,
+  dependencies: AchievementServiceDependencies,
+): Promise<Achievement> {
+  const achievement =
+    await dependencies.dbClient.deleteAchievement(achievementId);
+
+  try {
+    await dependencies.notificationClient.invalidateChannelCache(
+      achievement.channelId,
+    );
+  } catch {
+    throw new ApplicationError(
+      502,
+      "notification_handler_error",
+      "Notification handler cache invalidation failed after achievement deletion",
+    );
+  }
+
+  return achievement;
+}
+
+async function deleteAchievement(achievementId: string): Promise<Achievement> {
+  return deleteAchievementWithDependencies(achievementId, {
+    dbClient: dbAchievementClient,
+    notificationClient: notificationCacheClient,
+  });
+}
+
 export {
   createAchievement,
   createAchievementWithDependencies,
+  deleteAchievement,
+  deleteAchievementWithDependencies,
   updateAchievement,
   updateAchievementWithDependencies,
 };

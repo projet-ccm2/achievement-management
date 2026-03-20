@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createAchievementHandler,
+  deleteAchievementHandler,
   updateAchievementHandler,
 } from "./controllers/achievementController";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
@@ -24,6 +25,7 @@ app.use(
   "/achievements",
   achievementRoutes({
     createAchievementHandler,
+    deleteAchievementHandler,
     updateAchievementHandler,
   }),
 );

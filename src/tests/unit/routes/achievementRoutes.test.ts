@@ -6,6 +6,7 @@ describe("achievementRoutes", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
       createAchievementHandler: handler,
+      deleteAchievementHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -25,6 +26,7 @@ describe("achievementRoutes", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
       createAchievementHandler: handler,
+      deleteAchievementHandler: handler,
       updateAchievementHandler: handler,
     });
     const stack = (
@@ -40,5 +42,29 @@ describe("achievementRoutes", () => {
     );
 
     expect(updateRoute?.route?.methods.put).toBe(true);
+  });
+
+  it("should register the delete achievement route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      createAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const deleteRoute = stack.find(
+      (layer) =>
+        layer.route?.path === "/:achievementId" &&
+        layer.route.methods["delete"],
+    );
+
+    expect(deleteRoute?.route?.methods["delete"]).toBe(true);
   });
 });
