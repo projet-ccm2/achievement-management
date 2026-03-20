@@ -140,6 +140,18 @@ describe("Environment Configuration", () => {
         require("../../../config/environment");
       }).toThrow("EXTERNAL_REQUEST_TIMEOUT_MS must be a positive integer");
     });
+
+    it("should fail clearly when ALLOWED_ORIGINS is missing in production", () => {
+      process.env.NODE_ENV = "production";
+      delete process.env.ALLOWED_ORIGINS;
+      process.env.DB_SERVICE_URL = "http://db-service.test";
+      process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
+
+      expect(() => {
+        require("../../../config/environment");
+      }).toThrow("ALLOWED_ORIGINS is required in production");
+    });
   });
 
   describe("config structure", () => {

@@ -1,6 +1,7 @@
 /* global afterEach, beforeEach, describe, expect, global, it, jest */
 import {
   buildDbPayload,
+  buildDbUpdatePayload,
   HttpDbAchievementClient,
 } from "../../../services/achievementDbClient";
 import { ApplicationError } from "../../../middlewares/errorHandler";
@@ -60,6 +61,40 @@ describe("achievementDbClient", () => {
       ["Type"]: {
         ["Type_Label"]: "message",
         ["Type_Data"]: null,
+      },
+    });
+  });
+
+  it("should build the DB update payload without marketplace counters", () => {
+    expect(
+      buildDbUpdatePayload({
+        title: "Updated",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        type: {
+          label: "message_content",
+          data: "updated",
+        },
+      }),
+    ).toEqual({
+      ["Achievement_Title"]: "Updated",
+      ["Achievement_Description"]: "Desc",
+      ["Achievement_Goal"]: 2,
+      ["Achievement_Reward"]: 10,
+      ["Achievement_Label"]: "",
+      ["Achievement_Public"]: false,
+      ["Achievement_Active"]: true,
+      ["Achievement_Secret"]: false,
+      ["Achievement_Image"]: null,
+      ["Type"]: {
+        ["Type_Label"]: "message_content",
+        ["Type_Data"]: "updated",
       },
     });
   });
@@ -308,6 +343,21 @@ describe("achievementDbClient", () => {
       "http://db-service.test/achievements/achievement-1",
       expect.objectContaining({
         method: "PUT",
+        body: JSON.stringify({
+          ["Achievement_Title"]: "Updated",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 2,
+          ["Achievement_Reward"]: 10,
+          ["Achievement_Label"]: "",
+          ["Achievement_Public"]: false,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Achievement_Image"]: null,
+          ["Type"]: {
+            ["Type_Label"]: "message_content",
+            ["Type_Data"]: "updated",
+          },
+        }),
       }),
     );
     expect(achievement.title).toBe("Updated");

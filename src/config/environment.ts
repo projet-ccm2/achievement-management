@@ -38,6 +38,10 @@ function readPort(): number {
 
 function readAllowedOrigins(): string[] {
   if (!process.env.ALLOWED_ORIGINS) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ALLOWED_ORIGINS is required in production");
+    }
+
     return ["http://localhost:3000", "http://localhost:8080", "null"];
   }
 

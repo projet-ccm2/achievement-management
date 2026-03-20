@@ -33,7 +33,7 @@ type DbAchievementClient = {
 };
 /* eslint-enable no-unused-vars */
 
-function buildDbPayload(
+function buildBaseDbPayload(
   payload: CreateAchievementRequest | UpdateAchievementRequest,
 ): Record<string, unknown> {
   return {
@@ -43,17 +43,31 @@ function buildDbPayload(
     ["Achievement_Reward"]: payload.reward,
     ["Achievement_Label"]: payload.label,
     ["Achievement_Public"]: payload.public,
-    ["Achievement_Downloads"]: 0,
-    ["Achievement_Visits"]: 0,
     ["Achievement_Active"]: payload.active,
     ["Achievement_Secret"]: payload.secret,
     ["Achievement_Image"]: payload.image,
-    ...("channelId" in payload ? { ["Chanel_ID"]: payload.channelId } : {}),
     ["Type"]: {
       ["Type_Label"]: payload.type.label,
       ["Type_Data"]: payload.type.data,
     },
   };
+}
+
+function buildDbPayload(
+  payload: CreateAchievementRequest,
+): Record<string, unknown> {
+  return {
+    ...buildBaseDbPayload(payload),
+    ["Achievement_Downloads"]: 0,
+    ["Achievement_Visits"]: 0,
+    ["Chanel_ID"]: payload.channelId,
+  };
+}
+
+function buildDbUpdatePayload(
+  payload: UpdateAchievementRequest,
+): Record<string, unknown> {
+  return buildBaseDbPayload(payload);
 }
 
 async function parseDbResponse(response: Response): Promise<unknown> {
@@ -300,7 +314,7 @@ class HttpDbAchievementClient implements DbAchievementClient {
         headers: {
           "content-type": "application/json",
         },
-        body: JSON.stringify(buildDbPayload(payload)),
+        body: JSON.stringify(buildDbUpdatePayload(payload)),
       },
     });
 
@@ -419,5 +433,10 @@ class HttpDbAchievementClient implements DbAchievementClient {
 
 const dbAchievementClient: DbAchievementClient = new HttpDbAchievementClient();
 
-export { HttpDbAchievementClient, buildDbPayload, dbAchievementClient };
+export {
+  HttpDbAchievementClient,
+  buildDbPayload,
+  buildDbUpdatePayload,
+  dbAchievementClient,
+};
 export type { DbAchievementClient };
