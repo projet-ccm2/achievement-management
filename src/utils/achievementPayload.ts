@@ -1,5 +1,5 @@
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement } from "../models/achievement";
+import { Achievement, UserAchievement } from "../models/achievement";
 
 const supportedTriggerLabels = [
   "message",
@@ -335,9 +335,81 @@ function mapDbAchievementsToResponse(body: unknown): Achievement[] {
   return body.map((achievement) => mapDbAchievementToResponse(achievement));
 }
 
+function readOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  return readBoolean(value, fieldName);
+}
+
+function readOptionalNullableString(
+  value: unknown,
+  fieldName: string,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return readRequiredString(value, fieldName);
+}
+
+function mapDbUserState(
+  body: Record<string, unknown>,
+): UserAchievement["userState"] {
+  const nestedUserState = isRecord(body["UserState"]) ? body["UserState"] : {};
+  const progressCountSource =
+    nestedUserState["Progress_Count"] ??
+    nestedUserState["Count"] ??
+    body["Progress_Count"] ??
+    body["Count"];
+  const finishedSource = nestedUserState["Finished"] ?? body["Finished"];
+  const acquiredDateSource =
+    nestedUserState["Acquired_Date"] ??
+    nestedUserState["Aquired_Date"] ??
+    body["Acquired_Date"] ??
+    body["Aquired_Date"];
+
+  return {
+    progressCount: readOptionalNumber(progressCountSource, "Progress_Count"),
+    finished: readOptionalBoolean(finishedSource, "Finished", false),
+    acquiredDate: readOptionalNullableString(
+      acquiredDateSource,
+      "Acquired_Date",
+    ),
+  };
+}
+
+function mapDbUserAchievementToResponse(body: unknown): UserAchievement {
+  const achievement = mapDbAchievementToResponse(body);
+
+  return {
+    ...achievement,
+    userState: mapDbUserState(body as Record<string, unknown>),
+  };
+}
+
+function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid user achievement list payload",
+    );
+  }
+
+  return body.map((achievement) => mapDbUserAchievementToResponse(achievement));
+}
+
 export {
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbUserAchievementToResponse,
+  mapDbUserAchievementsToResponse,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,

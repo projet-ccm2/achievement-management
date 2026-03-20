@@ -2,6 +2,8 @@
 import {
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbUserAchievementToResponse,
+  mapDbUserAchievementsToResponse,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
@@ -457,6 +459,91 @@ describe("achievementPayload", () => {
         502,
         "db_service_error",
         "DB service returned an invalid achievement list payload",
+      ),
+    );
+  });
+
+  it("should map a DB user achievement response", () => {
+    expect(
+      mapDbUserAchievementToResponse({
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "First",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 10,
+        ["Achievement_Reward"]: 5,
+        ["Achievement_Public"]: false,
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Chanel_ID"]: "channel-1",
+        ["Type_Label"]: "message",
+        ["Type_Data"]: null,
+        ["UserState"]: {
+          ["Count"]: 8,
+          ["Finished"]: true,
+          ["Aquired_Date"]: "2025-09-01T10:00:00.000Z",
+        },
+      }),
+    ).toEqual({
+      id: "achievement-1",
+      title: "First",
+      description: "Desc",
+      goal: 10,
+      reward: 5,
+      label: "",
+      public: false,
+      downloads: 0,
+      visits: 0,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message",
+        data: null,
+      },
+      userState: {
+        progressCount: 8,
+        finished: true,
+        acquiredDate: "2025-09-01T10:00:00.000Z",
+      },
+    });
+  });
+
+  it("should map a DB user achievement list response", () => {
+    expect(
+      mapDbUserAchievementsToResponse([
+        {
+          ["Achievement_ID"]: "achievement-1",
+          ["Achievement_Title"]: "First",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 10,
+          ["Achievement_Reward"]: 5,
+          ["Achievement_Public"]: false,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Chanel_ID"]: "channel-1",
+          ["Type_Label"]: "message",
+          ["Type_Data"]: null,
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        id: "achievement-1",
+        userState: {
+          progressCount: 0,
+          finished: false,
+          acquiredDate: null,
+        },
+      }),
+    ]);
+  });
+
+  it("should reject invalid DB user list responses", () => {
+    expect(() => mapDbUserAchievementsToResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid user achievement list payload",
       ),
     );
   });

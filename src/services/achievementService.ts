@@ -1,5 +1,5 @@
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement } from "../models/achievement";
+import { Achievement, UserAchievement } from "../models/achievement";
 import {
   dbAchievementClient,
   DbAchievementClient,
@@ -84,6 +84,21 @@ async function getPublicAchievementsWithDependencies(
 
 async function getPublicAchievements(): Promise<Achievement[]> {
   return getPublicAchievementsWithDependencies({
+    dbClient: dbAchievementClient,
+  });
+}
+
+async function getAchievementsByUserIdWithDependencies(
+  userId: string,
+  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+): Promise<UserAchievement[]> {
+  return dependencies.dbClient.getAchievementsByUserId(userId);
+}
+
+async function getAchievementsByUserId(
+  userId: string,
+): Promise<UserAchievement[]> {
+  return getAchievementsByUserIdWithDependencies(userId, {
     dbClient: dbAchievementClient,
   });
 }
@@ -223,6 +238,8 @@ export {
   getAchievementByIdWithDependencies,
   getAchievementsByChannelId,
   getAchievementsByChannelIdWithDependencies,
+  getAchievementsByUserId,
+  getAchievementsByUserIdWithDependencies,
   getPublicAchievements,
   getPublicAchievementsWithDependencies,
   deactivateAchievement,

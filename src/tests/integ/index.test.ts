@@ -9,6 +9,7 @@ import {
   deleteAchievement,
   getAchievementById,
   getAchievementsByChannelId,
+  getAchievementsByUserId,
   getPublicAchievements,
   updateAchievement,
 } from "../../services/achievementService";
@@ -30,6 +31,7 @@ jest.mock("../../services/achievementService", () => ({
   deleteAchievement: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
+  getAchievementsByUserId: jest.fn(),
   getPublicAchievements: jest.fn(),
   updateAchievement: jest.fn(),
 }));
@@ -50,6 +52,10 @@ describe("Express App", () => {
     >;
   const getPublicAchievementsMock =
     getPublicAchievements as jest.MockedFunction<typeof getPublicAchievements>;
+  const getAchievementsByUserIdMock =
+    getAchievementsByUserId as jest.MockedFunction<
+      typeof getAchievementsByUserId
+    >;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
   const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
@@ -850,6 +856,77 @@ describe("Express App", () => {
       getPublicAchievementsMock.mockResolvedValue([]);
 
       const response = await request(app).get("/achievements/public");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /achievements/user/:userId", () => {
+    it("should return achievements by user with state", async () => {
+      getAchievementsByUserIdMock.mockResolvedValue([
+        {
+          id: "achievement-1",
+          title: "Profile title",
+          description: "Profile description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: false,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+          userState: {
+            progressCount: 20,
+            finished: true,
+            acquiredDate: "2025-09-01T10:00:00.000Z",
+          },
+        },
+      ]);
+
+      const response = await request(app).get("/achievements/user/user-1");
+
+      expect(response.status).toBe(200);
+      expect(getAchievementsByUserIdMock).toHaveBeenCalledWith("user-1");
+      expect(response.body).toEqual([
+        {
+          id: "achievement-1",
+          title: "Profile title",
+          description: "Profile description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: false,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+          userState: {
+            progressCount: 20,
+            finished: true,
+            acquiredDate: "2025-09-01T10:00:00.000Z",
+          },
+        },
+      ]);
+    });
+
+    it("should return an empty list when the user has no achievements", async () => {
+      getAchievementsByUserIdMock.mockResolvedValue([]);
+
+      const response = await request(app).get("/achievements/user/user-1");
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);

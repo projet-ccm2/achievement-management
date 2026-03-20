@@ -1,11 +1,12 @@
 /* global Response, fetch */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement } from "../models/achievement";
+import { Achievement, UserAchievement } from "../models/achievement";
 import {
   CreateAchievementRequest,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbUserAchievementsToResponse,
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
 
@@ -14,6 +15,7 @@ type DbAchievementClient = {
   getAchievementById: (...args: [string]) => Promise<Achievement>;
   getAchievementsByChannelId: (...args: [string]) => Promise<Achievement[]>;
   getPublicAchievements: () => Promise<Achievement[]>;
+  getAchievementsByUserId: (...args: [string]) => Promise<UserAchievement[]>;
   createAchievement: (
     ...args: [CreateAchievementRequest]
   ) => Promise<Achievement>;
@@ -123,6 +125,25 @@ class HttpDbAchievementClient implements DbAchievementClient {
     }
 
     return mapDbAchievementsToResponse(body);
+  }
+
+  public async getAchievementsByUserId(
+    userId: string,
+  ): Promise<UserAchievement[]> {
+    const response = await fetch(
+      `${config.dbServiceUrl}/achievements/user/${encodeURIComponent(userId)}`,
+      {
+        method: "GET",
+      },
+    );
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      throw mapDbError(response, "get");
+    }
+
+    return mapDbUserAchievementsToResponse(body);
   }
 
   public async createAchievement(

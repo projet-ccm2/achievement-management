@@ -7,6 +7,7 @@ import {
   buildDeleteAchievementHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
+  buildGetAchievementsByUserIdHandler,
   buildGetPublicAchievementsHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
@@ -433,6 +434,66 @@ describe("achievementController", () => {
         expect.objectContaining({
           id: "achievement-1",
           public: true,
+        }),
+      ]),
+    );
+  });
+
+  it("should return achievements by user id with user state", async () => {
+    const getAchievementsByUserId = jest.fn().mockResolvedValue([
+      {
+        id: "achievement-1",
+        title: "Profile",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+        userState: {
+          progressCount: 2,
+          finished: true,
+          acquiredDate: "2025-09-01T10:00:00.000Z",
+        },
+      },
+    ]);
+    const handler = buildGetAchievementsByUserIdHandler(
+      getAchievementsByUserId,
+    );
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          userId: "user-1",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(getAchievementsByUserId).toHaveBeenCalledWith("user-1");
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "achievement-1",
+          userState: expect.objectContaining({
+            progressCount: 2,
+            finished: true,
+          }),
         }),
       ]),
     );

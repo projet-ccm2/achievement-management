@@ -667,6 +667,140 @@ describe("achievementDbClient", () => {
     );
   });
 
+  it("should get achievements by user through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue([
+        {
+          ["Achievement_ID"]: "achievement-1",
+          ["Achievement_Title"]: "Profile",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 2,
+          ["Achievement_Reward"]: 10,
+          ["Achievement_Label"]: "",
+          ["Achievement_Public"]: false,
+          ["Achievement_Downloads"]: 0,
+          ["Achievement_Visits"]: 0,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Achievement_Image"]: null,
+          ["Chanel_ID"]: "channel-1",
+          ["Type"]: {
+            ["Type_Label"]: "message",
+            ["Type_Data"]: null,
+          },
+          ["UserState"]: {
+            ["Progress_Count"]: 2,
+            ["Finished"]: true,
+            ["Acquired_Date"]: "2025-09-01T10:00:00.000Z",
+          },
+        },
+      ]),
+    });
+
+    const client = new HttpDbAchievementClient();
+    const achievements = await client.getAchievementsByUserId("user-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/achievements/user/user-1",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+    expect(achievements).toHaveLength(1);
+    expect(achievements[0]?.userState).toEqual({
+      progressCount: 2,
+      finished: true,
+      acquiredDate: "2025-09-01T10:00:00.000Z",
+    });
+  });
+
+  it("should default missing user state values", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue([
+        {
+          ["Achievement_ID"]: "achievement-1",
+          ["Achievement_Title"]: "Profile",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 2,
+          ["Achievement_Reward"]: 10,
+          ["Achievement_Label"]: "",
+          ["Achievement_Public"]: false,
+          ["Achievement_Downloads"]: 0,
+          ["Achievement_Visits"]: 0,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Achievement_Image"]: null,
+          ["Chanel_ID"]: "channel-1",
+          ["Type"]: {
+            ["Type_Label"]: "message",
+            ["Type_Data"]: null,
+          },
+        },
+      ]),
+    });
+
+    const client = new HttpDbAchievementClient();
+    const achievements = await client.getAchievementsByUserId("user-1");
+
+    expect(achievements[0]?.userState).toEqual({
+      progressCount: 0,
+      finished: false,
+      acquiredDate: null,
+    });
+  });
+
+  it("should reject invalid user achievement list payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        invalid: true,
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementsByUserId("user-1")).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid user achievement list payload",
+      ),
+    );
+  });
+
+  it("should map user achievement list DB service failures", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        message: "failure",
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementsByUserId("user-1")).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service could not get the achievement",
+      ),
+    );
+  });
+
   it("should reject invalid achievement list payloads", async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,

@@ -20,4 +20,19 @@ interface Achievement {
   type: AchievementType;
 }
 
-export type { Achievement, AchievementType };
+interface AchievementUserState {
+  progressCount: number;
+  finished: boolean;
+  acquiredDate: string | null;
+}
+
+interface UserAchievement extends Achievement {
+  userState: AchievementUserState;
+}
+
+export type {
+  Achievement,
+  AchievementType,
+  AchievementUserState,
+  UserAchievement,
+};
