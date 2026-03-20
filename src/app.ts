@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  activateAchievementHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
@@ -25,6 +26,7 @@ app.get("/health", (req, res) => {
 app.use(
   "/achievements",
   achievementRoutes({
+    activateAchievementHandler,
     createAchievementHandler,
     deactivateAchievementHandler,
     deleteAchievementHandler,

@@ -143,7 +143,40 @@ async function deactivateAchievement(
   });
 }
 
+async function activateAchievementWithDependencies(
+  achievementId: string,
+  dependencies: AchievementServiceDependencies,
+): Promise<Achievement> {
+  const achievement =
+    await dependencies.dbClient.activateAchievement(achievementId);
+
+  try {
+    await dependencies.notificationClient.invalidateChannelCache(
+      achievement.channelId,
+    );
+  } catch {
+    throw new ApplicationError(
+      502,
+      "notification_handler_error",
+      "Notification handler cache invalidation failed after achievement activation",
+    );
+  }
+
+  return achievement;
+}
+
+async function activateAchievement(
+  achievementId: string,
+): Promise<Achievement> {
+  return activateAchievementWithDependencies(achievementId, {
+    dbClient: dbAchievementClient,
+    notificationClient: notificationCacheClient,
+  });
+}
+
 export {
+  activateAchievement,
+  activateAchievementWithDependencies,
   createAchievement,
   createAchievementWithDependencies,
   deactivateAchievement,

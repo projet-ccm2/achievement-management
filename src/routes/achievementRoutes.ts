@@ -1,6 +1,7 @@
 import { RequestHandler, Router } from "express";
 
 interface AchievementRouteHandlers {
+  activateAchievementHandler: RequestHandler;
   createAchievementHandler: RequestHandler;
   updateAchievementHandler: RequestHandler;
   deleteAchievementHandler: RequestHandler;
@@ -13,6 +14,7 @@ function achievementRoutes(handlers: AchievementRouteHandlers): Router {
   router.post("/", handlers.createAchievementHandler);
   router.put("/:achievementId", handlers.updateAchievementHandler);
   router.delete("/:achievementId", handlers.deleteAchievementHandler);
+  router.patch("/:achievementId/activate", handlers.activateAchievementHandler);
   router.patch(
     "/:achievementId/deactivate",
     handlers.deactivateAchievementHandler,

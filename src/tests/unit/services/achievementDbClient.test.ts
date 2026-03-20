@@ -423,4 +423,62 @@ describe("achievementDbClient", () => {
       new ApplicationError(404, "not_found", "Achievement not found"),
     );
   });
+
+  it("should activate an achievement through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        ["Achievement_ID"]: "achievement-1",
+        ["Achievement_Title"]: "Activated",
+        ["Achievement_Description"]: "Desc",
+        ["Achievement_Goal"]: 2,
+        ["Achievement_Reward"]: 10,
+        ["Achievement_Label"]: "",
+        ["Achievement_Public"]: false,
+        ["Achievement_Downloads"]: 0,
+        ["Achievement_Visits"]: 0,
+        ["Achievement_Active"]: true,
+        ["Achievement_Secret"]: false,
+        ["Achievement_Image"]: null,
+        ["Chanel_ID"]: "channel-1",
+        ["Type"]: {
+          ["Type_Label"]: "message",
+          ["Type_Data"]: null,
+        },
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+    const achievement = await client.activateAchievement("achievement-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/achievements/achievement-1/activate",
+      expect.objectContaining({
+        method: "PATCH",
+      }),
+    );
+    expect(achievement.active).toBe(true);
+  });
+
+  it("should map activate not found responses", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404,
+      headers: {
+        get: jest.fn().mockReturnValue("application/json"),
+      },
+      json: jest.fn().mockResolvedValue({
+        message: "not found",
+      }),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.activateAchievement("achievement-1")).rejects.toEqual(
+      new ApplicationError(404, "not_found", "Achievement not found"),
+    );
+  });
 });

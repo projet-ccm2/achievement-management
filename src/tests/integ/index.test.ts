@@ -3,6 +3,7 @@ import request from "supertest";
 import { app } from "../../app";
 import { config } from "../../config/environment";
 import {
+  activateAchievement,
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
@@ -20,6 +21,7 @@ jest.mock("../../utils/logger", () => ({
 }));
 
 jest.mock("../../services/achievementService", () => ({
+  activateAchievement: jest.fn(),
   createAchievement: jest.fn(),
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
@@ -27,6 +29,9 @@ jest.mock("../../services/achievementService", () => ({
 }));
 
 describe("Express App", () => {
+  const activateAchievementMock = activateAchievement as jest.MockedFunction<
+    typeof activateAchievement
+  >;
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
   >;
@@ -557,6 +562,93 @@ describe("Express App", () => {
         code: "notification_handler_error",
         message:
           "Notification handler cache invalidation failed after achievement deactivation",
+      });
+    });
+  });
+
+  describe("PATCH /achievements/:achievementId/activate", () => {
+    it("should activate an achievement and return the stable response", async () => {
+      activateAchievementMock.mockResolvedValue({
+        id: "achievement-1",
+        title: "Activated title",
+        description: "Activated description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+
+      const response = await request(app).patch(
+        "/achievements/achievement-1/activate",
+      );
+
+      expect(response.status).toBe(200);
+      expect(activateAchievementMock).toHaveBeenCalledWith("achievement-1");
+      expect(response.body).toEqual({
+        id: "achievement-1",
+        title: "Activated title",
+        description: "Activated description",
+        goal: 20,
+        reward: 50,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      });
+    });
+
+    it("should return not found when the achievement does not exist", async () => {
+      activateAchievementMock.mockRejectedValue(
+        new ApplicationError(404, "not_found", "Achievement not found"),
+      );
+
+      const response = await request(app).patch(
+        "/achievements/achievement-404/activate",
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        code: "not_found",
+        message: "Achievement not found",
+      });
+    });
+
+    it("should return notification handler failures on activate", async () => {
+      activateAchievementMock.mockRejectedValue(
+        new ApplicationError(
+          502,
+          "notification_handler_error",
+          "Notification handler cache invalidation failed after achievement activation",
+        ),
+      );
+
+      const response = await request(app).patch(
+        "/achievements/achievement-1/activate",
+      );
+
+      expect(response.status).toBe(502);
+      expect(response.body).toEqual({
+        code: "notification_handler_error",
+        message:
+          "Notification handler cache invalidation failed after achievement activation",
       });
     });
   });

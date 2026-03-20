@@ -5,6 +5,7 @@ describe("achievementRoutes", () => {
   it("should register the create achievement route", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
+      activateAchievementHandler: handler,
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
@@ -26,6 +27,7 @@ describe("achievementRoutes", () => {
   it("should register the update achievement route", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
+      activateAchievementHandler: handler,
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
@@ -49,6 +51,7 @@ describe("achievementRoutes", () => {
   it("should register the delete achievement route", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
+      activateAchievementHandler: handler,
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
@@ -74,6 +77,7 @@ describe("achievementRoutes", () => {
   it("should register the deactivate achievement route", () => {
     const handler = jest.fn();
     const router = achievementRoutes({
+      activateAchievementHandler: handler,
       createAchievementHandler: handler,
       deactivateAchievementHandler: handler,
       deleteAchievementHandler: handler,
@@ -94,5 +98,31 @@ describe("achievementRoutes", () => {
     );
 
     expect(deactivateRoute?.route?.methods.patch).toBe(true);
+  });
+
+  it("should register the activate achievement route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      activateAchievementHandler: handler,
+      createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const activateRoute = stack.find(
+      (layer) =>
+        layer.route?.path === "/:achievementId/activate" &&
+        layer.route.methods.patch,
+    );
+
+    expect(activateRoute?.route?.methods.patch).toBe(true);
   });
 });

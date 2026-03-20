@@ -1,5 +1,6 @@
 import { Request, RequestHandler, Response } from "express";
 import {
+  activateAchievement,
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
@@ -70,11 +71,28 @@ const deactivateAchievementHandler = buildDeactivateAchievementHandler(
   deactivateAchievement,
 );
 
+function buildActivateAchievementHandler(
+  activateAchievementAction: typeof activateAchievement,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const achievement = await activateAchievementAction(
+      req.params.achievementId,
+    );
+
+    res.status(200).json(achievement);
+  };
+}
+
+const activateAchievementHandler =
+  buildActivateAchievementHandler(activateAchievement);
+
 export {
+  buildActivateAchievementHandler,
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildUpdateAchievementHandler,
+  activateAchievementHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
