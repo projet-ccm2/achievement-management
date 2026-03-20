@@ -1,12 +1,14 @@
-/* global Response, fetch */
+/* global Response */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
 import { AchievementSuggestion } from "../models/achievement";
+import { logger } from "../utils/logger";
 import {
   AiSuggestionRequest,
   mapAiSuggestionToResponse,
   supportedTriggerLabels,
 } from "../utils/achievementPayload";
+import { timedFetch } from "../utils/http";
 
 /* eslint-disable no-unused-vars */
 interface AiAchievementClient {
@@ -54,9 +56,18 @@ class HttpAiAchievementClient implements AiAchievementClient {
   public async generateAchievementSuggestion(
     payload: AiSuggestionRequest,
   ): Promise<AchievementSuggestion> {
-    const response = await fetch(
-      `${config.aiServiceUrl}/achievements/suggestions`,
-      {
+    const url = `${config.aiServiceUrl}/achievements/suggestions`;
+    const response = await timedFetch({
+      url,
+      method: "POST",
+      serviceName: "ai-service",
+      timeoutMs: config.externalRequestTimeoutMs,
+      errorCode: "ai_service_error",
+      networkErrorMessage:
+        "AI service could not generate an achievement suggestion",
+      timeoutErrorMessage:
+        "AI service request timed out while generating an achievement suggestion",
+      init: {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -66,11 +77,17 @@ class HttpAiAchievementClient implements AiAchievementClient {
           supportedTriggerLabels,
         }),
       },
-    );
+    });
 
     const body = await parseAiResponse(response);
 
     if (!response.ok) {
+      logger.error("AI service returned an error response", {
+        operation: "generateAchievementSuggestion",
+        method: "POST",
+        url,
+        status: response.status,
+      });
       throw mapAiError(response);
     }
 

@@ -5,6 +5,7 @@ interface Config {
   dbServiceUrl: string;
   aiServiceUrl: string;
   notificationHandlerUrl: string;
+  externalRequestTimeoutMs: number;
   cors: {
     allowedOrigins: string[];
   };
@@ -45,6 +46,17 @@ function readAllowedOrigins(): string[] {
     .filter((origin) => origin.length > 0);
 }
 
+function readExternalRequestTimeoutMs(): number {
+  const rawTimeout = process.env.EXTERNAL_REQUEST_TIMEOUT_MS || "10000";
+  const timeoutMs = Number.parseInt(rawTimeout, 10);
+
+  if (!Number.isInteger(timeoutMs) || timeoutMs <= 0) {
+    throw new Error("EXTERNAL_REQUEST_TIMEOUT_MS must be a positive integer");
+  }
+
+  return timeoutMs;
+}
+
 function validateConfig(): Config {
   return {
     port: readPort(),
@@ -52,6 +64,7 @@ function validateConfig(): Config {
     dbServiceUrl: readRequiredUrl("DB_SERVICE_URL"),
     aiServiceUrl: readRequiredUrl("IA_SERVICE_URL"),
     notificationHandlerUrl: readRequiredUrl("NOTIFICATION_HANDLER_URL"),
+    externalRequestTimeoutMs: readExternalRequestTimeoutMs(),
     cors: {
       allowedOrigins: readAllowedOrigins(),
     },

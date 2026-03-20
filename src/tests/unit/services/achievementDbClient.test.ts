@@ -5,6 +5,15 @@ import {
 } from "../../../services/achievementDbClient";
 import { ApplicationError } from "../../../middlewares/errorHandler";
 
+jest.mock("../../../utils/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 describe("achievementDbClient", () => {
   const originalFetch = global.fetch;
 
@@ -119,6 +128,37 @@ describe("achievementDbClient", () => {
         message: "failure",
       }),
     });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.createAchievement({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service could not create the achievement",
+      ),
+    );
+  });
+
+  it("should map DB service network failures", async () => {
+    (global.fetch as jest.Mock).mockRejectedValue(new Error("socket hang up"));
 
     const client = new HttpDbAchievementClient();
 

@@ -2,6 +2,15 @@
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import { HttpAiAchievementClient } from "../../../services/achievementAiClient";
 
+jest.mock("../../../utils/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
 describe("achievementAiClient", () => {
   const originalFetch = global.fetch;
 
@@ -176,6 +185,26 @@ describe("achievementAiClient", () => {
         502,
         "ai_service_error",
         "AI service returned an unusable achievement suggestion",
+      ),
+    );
+  });
+
+  it("should map AI network timeouts", async () => {
+    const timeoutError = new Error("timed out");
+    timeoutError.name = "AbortError";
+    (global.fetch as jest.Mock).mockRejectedValue(timeoutError);
+
+    const client = new HttpAiAchievementClient();
+
+    await expect(
+      client.generateAchievementSuggestion({
+        prompt: "Create an achievement",
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "ai_service_error",
+        "AI service request timed out while generating an achievement suggestion",
       ),
     );
   });
