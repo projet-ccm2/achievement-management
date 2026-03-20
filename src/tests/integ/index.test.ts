@@ -8,6 +8,7 @@ import {
   deactivateAchievement,
   deleteAchievement,
   getAchievementById,
+  getAchievementsByChannelId,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -27,6 +28,7 @@ jest.mock("../../services/achievementService", () => ({
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
   getAchievementById: jest.fn(),
+  getAchievementsByChannelId: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
@@ -40,6 +42,10 @@ describe("Express App", () => {
   const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
     typeof getAchievementById
   >;
+  const getAchievementsByChannelIdMock =
+    getAchievementsByChannelId as jest.MockedFunction<
+      typeof getAchievementsByChannelId
+    >;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
   const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
@@ -717,6 +723,71 @@ describe("Express App", () => {
         code: "not_found",
         message: "Achievement not found",
       });
+    });
+  });
+
+  describe("GET /achievements/channel/:channelId", () => {
+    it("should return achievements by channel", async () => {
+      getAchievementsByChannelIdMock.mockResolvedValue([
+        {
+          id: "achievement-1",
+          title: "Channel title",
+          description: "Channel description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: false,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        },
+      ]);
+
+      const response = await request(app).get(
+        "/achievements/channel/channel-1",
+      );
+
+      expect(response.status).toBe(200);
+      expect(getAchievementsByChannelIdMock).toHaveBeenCalledWith("channel-1");
+      expect(response.body).toEqual([
+        {
+          id: "achievement-1",
+          title: "Channel title",
+          description: "Channel description",
+          goal: 20,
+          reward: 50,
+          label: "",
+          public: false,
+          downloads: 0,
+          visits: 0,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
+        },
+      ]);
+    });
+
+    it("should return an empty list when the channel has no achievements", async () => {
+      getAchievementsByChannelIdMock.mockResolvedValue([]);
+
+      const response = await request(app).get(
+        "/achievements/channel/channel-1",
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
   });
 });

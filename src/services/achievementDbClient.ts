@@ -5,12 +5,14 @@ import { Achievement } from "../models/achievement";
 import {
   CreateAchievementRequest,
   mapDbAchievementToResponse,
+  mapDbAchievementsToResponse,
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
 
 /* eslint-disable no-unused-vars */
 type DbAchievementClient = {
   getAchievementById: (...args: [string]) => Promise<Achievement>;
+  getAchievementsByChannelId: (...args: [string]) => Promise<Achievement[]>;
   createAchievement: (
     ...args: [CreateAchievementRequest]
   ) => Promise<Achievement>;
@@ -87,6 +89,25 @@ class HttpDbAchievementClient implements DbAchievementClient {
     }
 
     return mapDbAchievementToResponse(body);
+  }
+
+  public async getAchievementsByChannelId(
+    channelId: string,
+  ): Promise<Achievement[]> {
+    const response = await fetch(
+      `${config.dbServiceUrl}/achievements/channel/${encodeURIComponent(channelId)}`,
+      {
+        method: "GET",
+      },
+    );
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      throw mapDbError(response, "get");
+    }
+
+    return mapDbAchievementsToResponse(body);
   }
 
   public async createAchievement(

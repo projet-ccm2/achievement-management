@@ -323,8 +323,21 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
   };
 }
 
+function mapDbAchievementsToResponse(body: unknown): Achievement[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement list payload",
+    );
+  }
+
+  return body.map((achievement) => mapDbAchievementToResponse(achievement));
+}
+
 export {
   mapDbAchievementToResponse,
+  mapDbAchievementsToResponse,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,

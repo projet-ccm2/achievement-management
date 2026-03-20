@@ -1,6 +1,7 @@
 /* global describe, expect, it */
 import {
   mapDbAchievementToResponse,
+  mapDbAchievementsToResponse,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
@@ -406,6 +407,56 @@ describe("achievementPayload", () => {
         502,
         "db_service_error",
         "DB service returned an invalid achievement payload",
+      ),
+    );
+  });
+
+  it("should map a DB achievement list response", () => {
+    expect(
+      mapDbAchievementsToResponse([
+        {
+          ["Achievement_ID"]: "achievement-1",
+          ["Achievement_Title"]: "First",
+          ["Achievement_Description"]: "Desc",
+          ["Achievement_Goal"]: 10,
+          ["Achievement_Reward"]: 5,
+          ["Achievement_Public"]: false,
+          ["Achievement_Active"]: true,
+          ["Achievement_Secret"]: false,
+          ["Chanel_ID"]: "channel-1",
+          ["Type_Label"]: "message",
+          ["Type_Data"]: null,
+        },
+      ]),
+    ).toEqual([
+      {
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 10,
+        reward: 5,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      },
+    ]);
+  });
+
+  it("should reject invalid DB list responses", () => {
+    expect(() => mapDbAchievementsToResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement list payload",
       ),
     );
   });

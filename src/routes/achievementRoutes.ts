@@ -7,12 +7,14 @@ interface AchievementRouteHandlers {
   deleteAchievementHandler: RequestHandler;
   deactivateAchievementHandler: RequestHandler;
   getAchievementByIdHandler: RequestHandler;
+  getAchievementsByChannelIdHandler: RequestHandler;
 }
 
 function achievementRoutes(handlers: AchievementRouteHandlers): Router {
   const router = Router();
 
   router.post("/", handlers.createAchievementHandler);
+  router.get("/channel/:channelId", handlers.getAchievementsByChannelIdHandler);
   router.get("/:achievementId", handlers.getAchievementByIdHandler);
   router.put("/:achievementId", handlers.updateAchievementHandler);
   router.delete("/:achievementId", handlers.deleteAchievementHandler);

@@ -5,6 +5,7 @@ import {
   deactivateAchievement,
   deleteAchievement,
   getAchievementById,
+  getAchievementsByChannelId,
   updateAchievement,
 } from "../services/achievementService";
 import {
@@ -102,17 +103,34 @@ function buildGetAchievementByIdHandler(
 const getAchievementByIdHandler =
   buildGetAchievementByIdHandler(getAchievementById);
 
+function buildGetAchievementsByChannelIdHandler(
+  getAchievementsByChannelIdAction: typeof getAchievementsByChannelId,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const achievements = await getAchievementsByChannelIdAction(
+      req.params.channelId,
+    );
+
+    res.status(200).json(achievements);
+  };
+}
+
+const getAchievementsByChannelIdHandler =
+  buildGetAchievementsByChannelIdHandler(getAchievementsByChannelId);
+
 export {
   buildActivateAchievementHandler,
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildGetAchievementByIdHandler,
+  buildGetAchievementsByChannelIdHandler,
   buildUpdateAchievementHandler,
   activateAchievementHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
   getAchievementByIdHandler,
+  getAchievementsByChannelIdHandler,
   updateAchievementHandler,
 };

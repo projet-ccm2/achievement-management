@@ -61,6 +61,21 @@ async function getAchievementById(achievementId: string): Promise<Achievement> {
   });
 }
 
+async function getAchievementsByChannelIdWithDependencies(
+  channelId: string,
+  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+): Promise<Achievement[]> {
+  return dependencies.dbClient.getAchievementsByChannelId(channelId);
+}
+
+async function getAchievementsByChannelId(
+  channelId: string,
+): Promise<Achievement[]> {
+  return getAchievementsByChannelIdWithDependencies(channelId, {
+    dbClient: dbAchievementClient,
+  });
+}
+
 async function updateAchievementWithDependencies(
   achievementId: string,
   payload: UpdateAchievementRequest,
@@ -194,6 +209,8 @@ export {
   createAchievementWithDependencies,
   getAchievementById,
   getAchievementByIdWithDependencies,
+  getAchievementsByChannelId,
+  getAchievementsByChannelIdWithDependencies,
   deactivateAchievement,
   deactivateAchievementWithDependencies,
   deleteAchievement,
