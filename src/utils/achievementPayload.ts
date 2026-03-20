@@ -1,5 +1,9 @@
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement } from "../models/achievement";
+import {
+  Achievement,
+  AchievementSuggestion,
+  UserAchievement,
+} from "../models/achievement";
 
 const supportedTriggerLabels = [
   "message",
@@ -44,8 +48,13 @@ interface UpdateAchievementRequest {
   };
 }
 
+interface AiSuggestionRequest {
+  prompt: string;
+}
+
 type CreateAchievementResponse = Achievement;
 type UpdateAchievementResponse = Achievement;
+type AiSuggestionResponse = AchievementSuggestion;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -197,6 +206,20 @@ function parseUpdateAchievementRequest(
   return parseAchievementDefinitionPayload(body);
 }
 
+function parseAiSuggestionRequest(body: unknown): AiSuggestionRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  return {
+    prompt: readRequiredString(body.prompt, "prompt"),
+  };
+}
+
 function parseAchievementDefinitionPayload(
   body: unknown,
 ): Omit<CreateAchievementRequest, "channelId"> {
@@ -323,13 +346,117 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
   };
 }
 
+function mapDbAchievementsToResponse(body: unknown): Achievement[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement list payload",
+    );
+  }
+
+  return body.map((achievement) => mapDbAchievementToResponse(achievement));
+}
+
+function mapAiSuggestionToResponse(body: unknown): AchievementSuggestion {
+  const parsedSuggestion = parseAchievementDefinitionPayload(body);
+
+  return {
+    title: parsedSuggestion.title,
+    description: parsedSuggestion.description,
+    goal: parsedSuggestion.goal,
+    reward: parsedSuggestion.reward,
+    public: parsedSuggestion.public,
+    active: parsedSuggestion.active,
+    secret: parsedSuggestion.secret,
+    type: parsedSuggestion.type,
+  };
+}
+
+function readOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  return readBoolean(value, fieldName);
+}
+
+function readOptionalNullableString(
+  value: unknown,
+  fieldName: string,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return readRequiredString(value, fieldName);
+}
+
+function mapDbUserState(
+  body: Record<string, unknown>,
+): UserAchievement["userState"] {
+  const nestedUserState = isRecord(body["UserState"]) ? body["UserState"] : {};
+  const progressCountSource =
+    nestedUserState["Progress_Count"] ??
+    nestedUserState["Count"] ??
+    body["Progress_Count"] ??
+    body["Count"];
+  const finishedSource = nestedUserState["Finished"] ?? body["Finished"];
+  const acquiredDateSource =
+    nestedUserState["Acquired_Date"] ??
+    nestedUserState["Aquired_Date"] ??
+    body["Acquired_Date"] ??
+    body["Aquired_Date"];
+
+  return {
+    progressCount: readOptionalNumber(progressCountSource, "Progress_Count"),
+    finished: readOptionalBoolean(finishedSource, "Finished", false),
+    acquiredDate: readOptionalNullableString(
+      acquiredDateSource,
+      "Acquired_Date",
+    ),
+  };
+}
+
+function mapDbUserAchievementToResponse(body: unknown): UserAchievement {
+  const achievement = mapDbAchievementToResponse(body);
+
+  return {
+    ...achievement,
+    userState: mapDbUserState(body as Record<string, unknown>),
+  };
+}
+
+function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid user achievement list payload",
+    );
+  }
+
+  return body.map((achievement) => mapDbUserAchievementToResponse(achievement));
+}
+
 export {
   mapDbAchievementToResponse,
+  mapDbAchievementsToResponse,
+  mapDbUserAchievementToResponse,
+  mapDbUserAchievementsToResponse,
+  mapAiSuggestionToResponse,
+  parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
 };
 export type {
+  AiSuggestionRequest,
+  AiSuggestionResponse,
   CreateAchievementRequest,
   CreateAchievementResponse,
   UpdateAchievementRequest,

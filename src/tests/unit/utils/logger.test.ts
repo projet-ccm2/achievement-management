@@ -1,5 +1,6 @@
 /* global describe, expect, it, jest */
 import { logger } from "../../../utils/logger";
+import winston from "winston";
 
 jest.mock("winston", () => ({
   createLogger: jest.fn(() => ({
@@ -37,5 +38,13 @@ describe("Logger", () => {
       expect(logger).toHaveProperty(method);
       expect(typeof logger[method as keyof typeof logger]).toBe("function");
     });
+  });
+
+  it("should use the achievement-management service metadata", () => {
+    expect(winston.createLogger).toHaveBeenCalledWith(
+      expect.objectContaining({
+        defaultMeta: { service: "achievement-management" },
+      }),
+    );
   });
 });
