@@ -9,6 +9,7 @@ interface AchievementRouteHandlers {
   getAchievementByIdHandler: RequestHandler;
   getAchievementsByChannelIdHandler: RequestHandler;
   getAchievementsByUserIdHandler: RequestHandler;
+  getAchievementsByUserIdAndChannelIdHandler: RequestHandler;
   getPublicAchievementsHandler: RequestHandler;
 }
 
@@ -18,6 +19,10 @@ function achievementRoutes(handlers: AchievementRouteHandlers): Router {
   router.post("/", handlers.createAchievementHandler);
   router.get("/public", handlers.getPublicAchievementsHandler);
   router.get("/channel/:channelId", handlers.getAchievementsByChannelIdHandler);
+  router.get(
+    "/user/:userId/channel/:channelId",
+    handlers.getAchievementsByUserIdAndChannelIdHandler,
+  );
   router.get("/user/:userId", handlers.getAchievementsByUserIdHandler);
   router.get("/:achievementId", handlers.getAchievementByIdHandler);
   router.put("/:achievementId", handlers.updateAchievementHandler);

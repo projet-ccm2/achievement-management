@@ -103,6 +103,30 @@ async function getAchievementsByUserId(
   });
 }
 
+async function getAchievementsByUserIdAndChannelIdWithDependencies(
+  userId: string,
+  channelId: string,
+  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+): Promise<UserAchievement[]> {
+  return dependencies.dbClient.getAchievementsByUserIdAndChannelId(
+    userId,
+    channelId,
+  );
+}
+
+async function getAchievementsByUserIdAndChannelId(
+  userId: string,
+  channelId: string,
+): Promise<UserAchievement[]> {
+  return getAchievementsByUserIdAndChannelIdWithDependencies(
+    userId,
+    channelId,
+    {
+      dbClient: dbAchievementClient,
+    },
+  );
+}
+
 async function updateAchievementWithDependencies(
   achievementId: string,
   payload: UpdateAchievementRequest,
@@ -239,6 +263,8 @@ export {
   getAchievementsByChannelId,
   getAchievementsByChannelIdWithDependencies,
   getAchievementsByUserId,
+  getAchievementsByUserIdAndChannelId,
+  getAchievementsByUserIdAndChannelIdWithDependencies,
   getAchievementsByUserIdWithDependencies,
   getPublicAchievements,
   getPublicAchievementsWithDependencies,

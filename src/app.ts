@@ -7,6 +7,7 @@ import {
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
   getAchievementsByUserIdHandler,
+  getAchievementsByUserIdAndChannelIdHandler,
   getPublicAchievementsHandler,
   updateAchievementHandler,
 } from "./controllers/achievementController";
@@ -37,6 +38,7 @@ app.use(
     getAchievementByIdHandler,
     getAchievementsByChannelIdHandler,
     getAchievementsByUserIdHandler,
+    getAchievementsByUserIdAndChannelIdHandler,
     getPublicAchievementsHandler,
     updateAchievementHandler,
   }),

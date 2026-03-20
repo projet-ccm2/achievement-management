@@ -12,6 +12,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -38,6 +39,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -67,6 +69,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -97,6 +100,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -127,6 +131,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -157,6 +162,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -186,6 +192,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -215,6 +222,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -243,6 +251,7 @@ describe("achievementRoutes", () => {
       getAchievementByIdHandler: handler,
       getAchievementsByChannelIdHandler: handler,
       getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
       getPublicAchievementsHandler: handler,
       updateAchievementHandler: handler,
     });
@@ -257,6 +266,37 @@ describe("achievementRoutes", () => {
     const getRoute = stack.find(
       (layer) =>
         layer.route?.path === "/user/:userId" && layer.route.methods.get,
+    );
+
+    expect(getRoute?.route?.methods.get).toBe(true);
+  });
+
+  it("should register the get achievements by user and channel route", () => {
+    const handler = jest.fn();
+    const router = achievementRoutes({
+      activateAchievementHandler: handler,
+      createAchievementHandler: handler,
+      deactivateAchievementHandler: handler,
+      deleteAchievementHandler: handler,
+      getAchievementByIdHandler: handler,
+      getAchievementsByChannelIdHandler: handler,
+      getAchievementsByUserIdHandler: handler,
+      getAchievementsByUserIdAndChannelIdHandler: handler,
+      getPublicAchievementsHandler: handler,
+      updateAchievementHandler: handler,
+    });
+    const stack = (
+      router as unknown as {
+        stack: Array<{
+          route?: { path: string; methods: Record<string, boolean> };
+        }>;
+      }
+    ).stack;
+
+    const getRoute = stack.find(
+      (layer) =>
+        layer.route?.path === "/user/:userId/channel/:channelId" &&
+        layer.route.methods.get,
     );
 
     expect(getRoute?.route?.methods.get).toBe(true);
