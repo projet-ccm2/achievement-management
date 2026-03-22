@@ -15,7 +15,6 @@ class HttpNotificationCacheClient implements NotificationCacheClient {
       url,
       method: "DELETE",
       serviceName: "notification-handler",
-      timeoutMs: config.externalRequestTimeoutMs,
       errorCode: "notification_handler_error",
       networkErrorMessage: "Notification handler cache invalidation failed",
       timeoutErrorMessage: "Notification handler cache invalidation timed out",

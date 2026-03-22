@@ -1,4 +1,4 @@
-/* global Response, afterEach, beforeEach, describe, expect, global, it, jest */
+/* global RequestInit, Response, afterEach, beforeEach, describe, expect, global, it, jest */
 import { ApplicationError } from "../../../middlewares/errorHandler";
 import { timedFetch } from "../../../utils/http";
 import { logger } from "../../../utils/logger";
@@ -16,10 +16,12 @@ describe("timedFetch", () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
+    jest.useFakeTimers();
     global.fetch = jest.fn();
   });
 
   afterEach(() => {
+    jest.useRealTimers();
     global.fetch = originalFetch;
     jest.clearAllMocks();
   });
@@ -33,7 +35,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "GET",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",
@@ -51,7 +52,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "GET",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",
@@ -64,7 +64,7 @@ describe("timedFetch", () => {
       serviceName: "service-test",
       method: "GET",
       url: "http://service.test/resource",
-      timeoutMs: 1000,
+      timeoutMs: 10000,
     });
   });
 
@@ -76,7 +76,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "POST",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",
@@ -91,5 +90,58 @@ describe("timedFetch", () => {
       url: "http://service.test/resource",
       error: "socket hang up",
     });
+  });
+
+  it("should log non-error network failures safely", async () => {
+    (global.fetch as jest.Mock).mockRejectedValue("socket hang up");
+
+    await expect(
+      timedFetch({
+        url: "http://service.test/resource",
+        method: "POST",
+        serviceName: "service-test",
+        errorCode: "service_error",
+        networkErrorMessage: "network failed",
+        timeoutErrorMessage: "request timed out",
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(502, "service_error", "network failed"),
+    );
+
+    expect(logger.error).toHaveBeenCalledWith("External request failed", {
+      serviceName: "service-test",
+      method: "POST",
+      url: "http://service.test/resource",
+      error: "socket hang up",
+    });
+  });
+
+  it("should abort the request after the internal timeout", async () => {
+    (global.fetch as jest.Mock).mockImplementation(
+      (_url: string, init?: RequestInit) =>
+        new Promise((_, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            const timeoutError = new Error("timeout");
+            timeoutError.name = "AbortError";
+            reject(timeoutError);
+          });
+        }),
+    );
+
+    const requestPromise = timedFetch({
+      url: "http://service.test/resource",
+      method: "GET",
+      serviceName: "service-test",
+      errorCode: "service_error",
+      networkErrorMessage: "network failed",
+      timeoutErrorMessage: "request timed out",
+    });
+    const assertion = expect(requestPromise).rejects.toEqual(
+      new ApplicationError(502, "service_error", "request timed out"),
+    );
+
+    await jest.advanceTimersByTimeAsync(10000);
+
+    await assertion;
   });
 });

@@ -22,7 +22,7 @@ jobs:
       environment: production
       cloud-run-service-name: achievement-management-prod
       service_type: "back_prive"
-      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_EXTERNAL_REQUEST_TIMEOUT_MS,PROD_ALLOWED_ORIGINS"
+      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_ALLOWED_ORIGINS"
 
     secrets:
       GCP_SA_KEY: ${{ secrets.PROD_GCP_SA_KEY }}
@@ -30,6 +30,5 @@ jobs:
       DB_SERVICE_URL: ${{ secrets.PROD_DB_SERVICE_URL }}
       IA_SERVICE_URL: ${{ secrets.PROD_IA_SERVICE_URL }}
       NOTIFICATION_HANDLER_URL: ${{ secrets.PROD_NOTIFICATION_HANDLER_URL }}
-      EXTERNAL_REQUEST_TIMEOUT_MS: ${{ secrets.PROD_EXTERNAL_REQUEST_TIMEOUT_MS }}
       ALLOWED_ORIGINS: ${{ secrets.PROD_ALLOWED_ORIGINS }}
       TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}

@@ -6,16 +6,20 @@ interface TimedFetchOptions {
   url: string;
   method: string;
   serviceName: string;
-  timeoutMs: number;
   errorCode: string;
   networkErrorMessage: string;
   timeoutErrorMessage: string;
   init?: RequestInit;
 }
 
+const externalRequestTimeoutMs = 10000;
+
 async function timedFetch(options: TimedFetchOptions): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    externalRequestTimeoutMs,
+  );
 
   try {
     return await fetch(options.url, {
@@ -28,7 +32,7 @@ async function timedFetch(options: TimedFetchOptions): Promise<Response> {
         serviceName: options.serviceName,
         method: options.method,
         url: options.url,
-        timeoutMs: options.timeoutMs,
+        timeoutMs: externalRequestTimeoutMs,
       });
 
       throw new ApplicationError(
