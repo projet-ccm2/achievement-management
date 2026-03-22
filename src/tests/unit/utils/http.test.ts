@@ -33,7 +33,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "GET",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",
@@ -51,7 +50,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "GET",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",
@@ -64,7 +62,7 @@ describe("timedFetch", () => {
       serviceName: "service-test",
       method: "GET",
       url: "http://service.test/resource",
-      timeoutMs: 1000,
+      timeoutMs: 10000,
     });
   });
 
@@ -76,7 +74,6 @@ describe("timedFetch", () => {
         url: "http://service.test/resource",
         method: "POST",
         serviceName: "service-test",
-        timeoutMs: 1000,
         errorCode: "service_error",
         networkErrorMessage: "network failed",
         timeoutErrorMessage: "request timed out",

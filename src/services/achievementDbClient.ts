@@ -118,7 +118,6 @@ class HttpDbAchievementClient implements DbAchievementClient {
       url: options.url,
       method: options.method,
       serviceName: "db-service",
-      timeoutMs: config.externalRequestTimeoutMs,
       errorCode: "db_service_error",
       networkErrorMessage: options.networkErrorMessage,
       timeoutErrorMessage: options.timeoutErrorMessage,

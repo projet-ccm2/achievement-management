@@ -16,7 +16,6 @@ describe("Environment Configuration", () => {
       delete process.env.PORT;
       delete process.env.NODE_ENV;
       delete process.env.ALLOWED_ORIGINS;
-      delete process.env.EXTERNAL_REQUEST_TIMEOUT_MS;
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
@@ -30,7 +29,6 @@ describe("Environment Configuration", () => {
       expect(config.notificationHandlerUrl).toBe(
         "http://notification-handler.test",
       );
-      expect(config.externalRequestTimeoutMs).toBe(10000);
       expect(config.cors.allowedOrigins).toEqual([
         "http://localhost:3000",
         "http://localhost:8080",
@@ -45,7 +43,6 @@ describe("Environment Configuration", () => {
       process.env.DB_SERVICE_URL = "http://db.internal";
       process.env.IA_SERVICE_URL = "http://ai.internal";
       process.env.NOTIFICATION_HANDLER_URL = "http://notify.internal";
-      process.env.EXTERNAL_REQUEST_TIMEOUT_MS = "5000";
 
       const { config } = require("../../../config/environment");
 
@@ -54,7 +51,6 @@ describe("Environment Configuration", () => {
       expect(config.dbServiceUrl).toBe("http://db.internal");
       expect(config.aiServiceUrl).toBe("http://ai.internal");
       expect(config.notificationHandlerUrl).toBe("http://notify.internal");
-      expect(config.externalRequestTimeoutMs).toBe(5000);
       expect(config.cors.allowedOrigins).toEqual([
         "https://example.com",
         "https://test.com",
@@ -130,17 +126,6 @@ describe("Environment Configuration", () => {
       }).toThrow("PORT must be a positive integer");
     });
 
-    it("should fail clearly when the external timeout is invalid", () => {
-      process.env.DB_SERVICE_URL = "http://db-service.test";
-      process.env.IA_SERVICE_URL = "http://ai-service.test";
-      process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
-      process.env.EXTERNAL_REQUEST_TIMEOUT_MS = "-1";
-
-      expect(() => {
-        require("../../../config/environment");
-      }).toThrow("EXTERNAL_REQUEST_TIMEOUT_MS must be a positive integer");
-    });
-
     it("should fail clearly when ALLOWED_ORIGINS is missing in production", () => {
       process.env.NODE_ENV = "production";
       delete process.env.ALLOWED_ORIGINS;
@@ -163,7 +148,6 @@ describe("Environment Configuration", () => {
       expect(config).toHaveProperty("dbServiceUrl");
       expect(config).toHaveProperty("aiServiceUrl");
       expect(config).toHaveProperty("notificationHandlerUrl");
-      expect(config).toHaveProperty("externalRequestTimeoutMs");
       expect(config).toHaveProperty("cors");
 
       expect(config.cors).toHaveProperty("allowedOrigins");
@@ -173,7 +157,6 @@ describe("Environment Configuration", () => {
       expect(typeof config.dbServiceUrl).toBe("string");
       expect(typeof config.aiServiceUrl).toBe("string");
       expect(typeof config.notificationHandlerUrl).toBe("string");
-      expect(typeof config.externalRequestTimeoutMs).toBe("number");
       expect(Array.isArray(config.cors.allowedOrigins)).toBe(true);
     });
   });

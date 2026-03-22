@@ -61,7 +61,6 @@ class HttpAiAchievementClient implements AiAchievementClient {
       url,
       method: "POST",
       serviceName: "ai-service",
-      timeoutMs: config.externalRequestTimeoutMs,
       errorCode: "ai_service_error",
       networkErrorMessage:
         "AI service could not generate an achievement suggestion",
