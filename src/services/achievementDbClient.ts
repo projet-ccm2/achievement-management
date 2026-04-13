@@ -77,21 +77,36 @@ async function parseDbResponse(response: Response): Promise<unknown> {
     return response.json();
   }
 
-  return null;
+  try {
+    return await response.text();
+  } catch {
+    return null;
+  }
 }
 
 function mapDbError(
   response: Response,
   operation: "get" | "create" | "update" | "delete" | "deactivate" | "activate",
+  body?: unknown,
 ): Error {
   if (response.status === 404) {
     return new ApplicationError(404, "not_found", "Achievement not found");
   }
 
+  if (response.status === 400 || response.status === 422) {
+    return new ApplicationError(
+      response.status,
+      "db_service_validation_error",
+      `DB service validation failed during ${operation}`,
+      body,
+    );
+  }
+
   return new ApplicationError(
-    502,
+    response.status >= 500 ? 502 : response.status,
     "db_service_error",
     `DB service could not ${operation} the achievement`,
+    body,
   );
 }
 
@@ -148,11 +163,23 @@ class HttpDbAchievementClient implements DbAchievementClient {
         method: "POST",
         url,
         status: response.status,
+        body,
       });
+
+      if (response.status === 400 || response.status === 422) {
+        throw new ApplicationError(
+          response.status,
+          "db_service_validation_error",
+          "DB service validation failed for achievement type",
+          body,
+        );
+      }
+
       throw new ApplicationError(
-        502,
+        response.status >= 500 ? 502 : response.status,
         "db_service_error",
         "DB service could not create the achievement type",
+        body,
       );
     }
 
@@ -201,8 +228,9 @@ class HttpDbAchievementClient implements DbAchievementClient {
         method: options.method,
         url: options.url,
         status: response.status,
+        body,
       });
-      throw mapDbError(response, options.operation);
+      throw mapDbError(response, options.operation, body);
     }
 
     return mapBody(body);
