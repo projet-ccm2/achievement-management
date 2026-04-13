@@ -267,11 +267,13 @@ function parseDbType(body: Record<string, unknown>): {
   label: SupportedTriggerLabel;
   data: string | null;
 } {
-  const nestedType = isRecord(body["typeAchievement"])
-    ? body["typeAchievement"]
-    : isRecord(body["Type"])
-      ? body["Type"]
-      : undefined;
+  let nestedType: Record<string, unknown> | undefined;
+
+  if (isRecord(body["typeAchievement"])) {
+    nestedType = body["typeAchievement"];
+  } else if (isRecord(body["Type"])) {
+    nestedType = body["Type"];
+  }
   const labelSource =
     nestedType?.["label"] ?? nestedType?.["Type_Label"] ?? body["Type_Label"];
   const dataSource =
@@ -462,11 +464,13 @@ function mapDbUserAchievementToResponse(body: unknown): UserAchievement {
 }
 
 function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
-  const achievementList = Array.isArray(body)
-    ? body
-    : isRecord(body) && Array.isArray(body["achievements"])
-      ? body["achievements"]
-      : null;
+  let achievementList: unknown[] | null = null;
+
+  if (Array.isArray(body)) {
+    achievementList = body;
+  } else if (isRecord(body) && Array.isArray(body["achievements"])) {
+    achievementList = body["achievements"];
+  }
 
   if (!achievementList) {
     throw new ApplicationError(
