@@ -33,41 +33,41 @@ type DbAchievementClient = {
 };
 /* eslint-enable no-unused-vars */
 
-function buildBaseDbPayload(
-  payload: CreateAchievementRequest | UpdateAchievementRequest,
-): Record<string, unknown> {
-  return {
-    ["Achievement_Title"]: payload.title,
-    ["Achievement_Description"]: payload.description,
-    ["Achievement_Goal"]: payload.goal,
-    ["Achievement_Reward"]: payload.reward,
-    ["Achievement_Label"]: payload.label,
-    ["Achievement_Public"]: payload.public,
-    ["Achievement_Active"]: payload.active,
-    ["Achievement_Secret"]: payload.secret,
-    ["Achievement_Image"]: payload.image,
-    ["Type"]: {
-      ["Type_Label"]: payload.type.label,
-      ["Type_Data"]: payload.type.data,
-    },
-  };
-}
-
 function buildDbPayload(
   payload: CreateAchievementRequest,
+  typeId: string,
 ): Record<string, unknown> {
   return {
-    ...buildBaseDbPayload(payload),
-    ["Achievement_Downloads"]: 0,
-    ["Achievement_Visits"]: 0,
-    ["Chanel_ID"]: payload.channelId,
+    title: payload.title,
+    description: payload.description,
+    goal: payload.goal,
+    reward: payload.reward,
+    label: payload.label,
+    public: payload.public,
+    active: payload.active,
+    secret: payload.secret,
+    image: payload.image,
+    channelId: payload.channelId,
+    typeId,
   };
 }
 
 function buildDbUpdatePayload(
   payload: UpdateAchievementRequest,
+  typeId: string,
 ): Record<string, unknown> {
-  return buildBaseDbPayload(payload);
+  return {
+    title: payload.title,
+    description: payload.description,
+    goal: payload.goal,
+    reward: payload.reward,
+    label: payload.label,
+    public: payload.public,
+    active: payload.active,
+    secret: payload.secret,
+    image: payload.image,
+    typeId,
+  };
 }
 
 async function parseDbResponse(response: Response): Promise<unknown> {
@@ -109,7 +109,66 @@ interface DbRequestOptions {
 type DbResponseMapper<T> = (...args: [unknown]) => T;
 /* eslint-enable no-unused-vars */
 
+function buildTypeAchievementPayload(
+  payload: CreateAchievementRequest | UpdateAchievementRequest,
+): Record<string, string> {
+  return {
+    label: payload.type.label,
+    data: payload.type.data ?? "",
+  };
+}
+
 class HttpDbAchievementClient implements DbAchievementClient {
+  private async createTypeAchievement(
+    payload: CreateAchievementRequest | UpdateAchievementRequest,
+  ): Promise<string> {
+    const url = `${config.dbServiceUrl}/type-achievements`;
+    const response = await timedFetch({
+      url,
+      method: "POST",
+      serviceName: "db-service",
+      errorCode: "db_service_error",
+      networkErrorMessage: "DB service could not create the achievement type",
+      timeoutErrorMessage:
+        "DB service request timed out while creating the achievement type",
+      init: {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(buildTypeAchievementPayload(payload)),
+      },
+    });
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      logger.error("DB service returned an error response", {
+        operation: "createTypeAchievement",
+        method: "POST",
+        url,
+        status: response.status,
+      });
+      throw new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service could not create the achievement type",
+      );
+    }
+
+    const parsedBody = body as { id?: unknown } | null;
+
+    if (!parsedBody || typeof parsedBody.id !== "string") {
+      throw new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement type payload",
+      );
+    }
+
+    return parsedBody.id;
+  }
+
   private async requestDb<T>(
     options: DbRequestOptions,
     mapBody: DbResponseMapper<T>,
@@ -234,13 +293,15 @@ class HttpDbAchievementClient implements DbAchievementClient {
   public async createAchievement(
     payload: CreateAchievementRequest,
   ): Promise<Achievement> {
+    const typeId = await this.createTypeAchievement(payload);
+
     return this.requestDb(
       {
         url: `${config.dbServiceUrl}/achievements`,
         method: "POST",
         operation: "create",
         logOperation: "createAchievement",
-        requestBody: buildDbPayload(payload),
+        requestBody: buildDbPayload(payload, typeId),
         networkErrorMessage: "DB service could not create the achievement",
         timeoutErrorMessage:
           "DB service request timed out while creating the achievement",
@@ -253,13 +314,15 @@ class HttpDbAchievementClient implements DbAchievementClient {
     achievementId: string,
     payload: UpdateAchievementRequest,
   ): Promise<Achievement> {
+    const typeId = await this.createTypeAchievement(payload);
+
     return this.requestDb(
       {
         url: `${config.dbServiceUrl}/achievements/${encodeURIComponent(achievementId)}`,
         method: "PUT",
         operation: "update",
         logOperation: "updateAchievement",
-        requestBody: buildDbUpdatePayload(payload),
+        requestBody: buildDbUpdatePayload(payload, typeId),
         networkErrorMessage: "DB service could not update the achievement",
         timeoutErrorMessage:
           "DB service request timed out while updating the achievement",

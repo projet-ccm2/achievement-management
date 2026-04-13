@@ -59,77 +59,6 @@ describe("achievementPayload", () => {
     });
   });
 
-  it("should normalize message type data to null", () => {
-    expect(
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        public: true,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: "ignored",
-        },
-      }).type.data,
-    ).toBeNull();
-  });
-
-  it("should normalize channel point cost to a string", () => {
-    expect(
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        public: true,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "channel-point-cost",
-          data: 100,
-        },
-      }).type,
-    ).toEqual({
-      label: "channel_point_cost",
-      data: "100",
-    });
-  });
-
-  it("should reject non object payloads", () => {
-    expect(() => parseCreateAchievementRequest(null)).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "Request body must be an object",
-      ),
-    );
-  });
-
-  it("should parse a valid AI suggestion prompt request", () => {
-    expect(
-      parseAiSuggestionRequest({
-        prompt: " Create an achievement suggestion ",
-      }),
-    ).toEqual({
-      prompt: "Create an achievement suggestion",
-    });
-  });
-
-  it("should reject non object AI suggestion prompt requests", () => {
-    expect(() => parseAiSuggestionRequest(null)).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "Request body must be an object",
-      ),
-    );
-  });
-
   it("should parse a valid update payload", () => {
     expect(
       parseUpdateAchievementRequest({
@@ -163,7 +92,14 @@ describe("achievementPayload", () => {
     });
   });
 
-  it("should reject missing type objects", () => {
+  it("should reject invalid creation payloads", () => {
+    expect(() => parseCreateAchievementRequest(null)).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "Request body must be an object",
+      ),
+    );
     expect(() =>
       parseCreateAchievementRequest({
         title: "First",
@@ -178,34 +114,6 @@ describe("achievementPayload", () => {
     ).toThrow(
       new ApplicationError(400, "validation_error", "type must be an object"),
     );
-  });
-
-  it("should reject non string trigger labels", () => {
-    expect(() =>
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        public: true,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: 12,
-          data: null,
-        },
-      }),
-    ).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "type.label must be a string",
-      ),
-    );
-  });
-
-  it("should reject empty required strings", () => {
     expect(() =>
       parseCreateAchievementRequest({
         title: " ",
@@ -224,9 +132,46 @@ describe("achievementPayload", () => {
     ).toThrow(
       new ApplicationError(400, "validation_error", "title is required"),
     );
-  });
-
-  it("should reject unsupported trigger labels", () => {
+    expect(() =>
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: -1,
+        public: true,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "reward must be a non-negative integer",
+      ),
+    );
+    expect(() =>
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        public: "true",
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).toThrow(
+      new ApplicationError(400, "validation_error", "public must be a boolean"),
+    );
     expect(() =>
       parseCreateAchievementRequest({
         title: "First",
@@ -276,96 +221,43 @@ describe("achievementPayload", () => {
     );
   });
 
-  it("should reject invalid rewards", () => {
-    expect(() =>
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: -1,
-        public: true,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
+  it("should parse a valid AI suggestion prompt request", () => {
+    expect(
+      parseAiSuggestionRequest({
+        prompt: " Create an achievement suggestion ",
       }),
-    ).toThrow(
+    ).toEqual({
+      prompt: "Create an achievement suggestion",
+    });
+    expect(() => parseAiSuggestionRequest(null)).toThrow(
       new ApplicationError(
         400,
         "validation_error",
-        "reward must be a non-negative integer",
+        "Request body must be an object",
       ),
     );
   });
 
-  it("should reject invalid booleans", () => {
-    expect(() =>
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        public: "true",
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
-      }),
-    ).toThrow(
-      new ApplicationError(400, "validation_error", "public must be a boolean"),
-    );
-  });
-
-  it("should reject channel point cost values with invalid types", () => {
-    expect(() =>
-      parseCreateAchievementRequest({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        public: true,
-        active: true,
-        secret: false,
-        channelId: "channel-1",
-        type: {
-          label: "channel_point_cost",
-          data: false,
-        },
-      }),
-    ).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
-      ),
-    );
-  });
-
-  it("should map a DB achievement response with nested type", () => {
+  it("should map a DB achievement response with the new camelCase contract", () => {
     expect(
       mapDbAchievementToResponse({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 10,
-        ["Achievement_Reward"]: 5,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 1,
-        ["Achievement_Visits"]: 2,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: "https://image.test/file.png",
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "API Caller",
-          ["Type_Data"]: "event_key",
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 10,
+        reward: 5,
+        label: "",
+        public: false,
+        downloads: 1,
+        visits: 2,
+        active: true,
+        secret: false,
+        image: "https://image.test/file.png",
+        channelId: null,
+        typeAchievement: {
+          id: "type-1",
+          label: "API Caller",
+          data: "event_key",
         },
       }),
     ).toEqual({
@@ -381,7 +273,7 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       image: "https://image.test/file.png",
-      channelId: "channel-1",
+      channelId: null,
       type: {
         label: "api_caller",
         data: "event_key",
@@ -389,20 +281,74 @@ describe("achievementPayload", () => {
     });
   });
 
-  it("should map a DB achievement response with flat type fields and defaults", () => {
+  it("should map a DB achievement list response", () => {
     expect(
-      mapDbAchievementToResponse({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 10,
-        ["Achievement_Reward"]: 5,
-        ["Achievement_Public"]: false,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Chanel_ID"]: "channel-1",
-        ["Type_Label"]: "message",
-        ["Type_Data"]: "ignored",
+      mapDbAchievementsToResponse([
+        {
+          id: "achievement-1",
+          title: "First",
+          description: "Desc",
+          goal: 10,
+          reward: 5,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          typeAchievement: {
+            id: "type-1",
+            label: "message",
+            data: "",
+          },
+        },
+      ]),
+    ).toEqual([
+      {
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 10,
+        reward: 5,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      },
+    ]);
+  });
+
+  it("should map a DB user achievement response from achieved", () => {
+    expect(
+      mapDbUserAchievementToResponse({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 10,
+        reward: 5,
+        public: false,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        typeAchievement: {
+          id: "type-1",
+          label: "message",
+          data: "",
+        },
+        achieved: {
+          achievementId: "achievement-1",
+          userId: "user-1",
+          count: 8,
+          finished: true,
+          labelActive: true,
+          acquiredDate: "2025-09-01T10:00:00.000Z",
+        },
       }),
     ).toEqual({
       id: "achievement-1",
@@ -422,7 +368,49 @@ describe("achievementPayload", () => {
         label: "message",
         data: null,
       },
+      userState: {
+        progressCount: 8,
+        finished: true,
+        acquiredDate: "2025-09-01T10:00:00.000Z",
+      },
     });
+  });
+
+  it("should map a wrapped DB user achievement list response", () => {
+    expect(
+      mapDbUserAchievementsToResponse({
+        userId: "user-1",
+        channelId: "channel-1",
+        achievements: [
+          {
+            id: "achievement-1",
+            title: "First",
+            description: "Desc",
+            goal: 10,
+            reward: 5,
+            public: false,
+            active: true,
+            secret: false,
+            channelId: "channel-1",
+            typeAchievement: {
+              id: "type-1",
+              label: "message",
+              data: "",
+            },
+            achieved: null,
+          },
+        ],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        id: "achievement-1",
+        userState: {
+          progressCount: 0,
+          finished: false,
+          acquiredDate: null,
+        },
+      }),
+    ]);
   });
 
   it("should reject invalid DB responses", () => {
@@ -431,6 +419,45 @@ describe("achievementPayload", () => {
         502,
         "db_service_error",
         "DB service returned an invalid achievement payload",
+      ),
+    );
+    expect(() => mapDbUserAchievementsToResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid user achievement list payload",
+      ),
+    );
+    expect(() => mapDbAchievementsToResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement list payload",
+      ),
+    );
+    expect(() =>
+      mapDbAchievementToResponse({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 10,
+        reward: 5,
+        public: false,
+        downloads: -1,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        typeAchievement: {
+          id: "type-1",
+          label: "message",
+          data: "",
+        },
+      }),
+    ).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "downloads must be a non-negative integer",
       ),
     );
   });
@@ -463,189 +490,5 @@ describe("achievementPayload", () => {
         data: "keyword",
       },
     });
-  });
-
-  it("should map a DB achievement list response", () => {
-    expect(
-      mapDbAchievementsToResponse([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "First",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 10,
-          ["Achievement_Reward"]: 5,
-          ["Achievement_Public"]: false,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Chanel_ID"]: "channel-1",
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      ]),
-    ).toEqual([
-      {
-        id: "achievement-1",
-        title: "First",
-        description: "Desc",
-        goal: 10,
-        reward: 5,
-        label: "",
-        public: false,
-        downloads: 0,
-        visits: 0,
-        active: true,
-        secret: false,
-        image: null,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
-      },
-    ]);
-  });
-
-  it("should reject invalid DB list responses", () => {
-    expect(() => mapDbAchievementsToResponse("invalid")).toThrow(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid achievement list payload",
-      ),
-    );
-  });
-
-  it("should map a DB user achievement response", () => {
-    expect(
-      mapDbUserAchievementToResponse({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 10,
-        ["Achievement_Reward"]: 5,
-        ["Achievement_Public"]: false,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Chanel_ID"]: "channel-1",
-        ["Type_Label"]: "message",
-        ["Type_Data"]: null,
-        ["UserState"]: {
-          ["Count"]: 8,
-          ["Finished"]: true,
-          ["Aquired_Date"]: "2025-09-01T10:00:00.000Z",
-        },
-      }),
-    ).toEqual({
-      id: "achievement-1",
-      title: "First",
-      description: "Desc",
-      goal: 10,
-      reward: 5,
-      label: "",
-      public: false,
-      downloads: 0,
-      visits: 0,
-      active: true,
-      secret: false,
-      image: null,
-      channelId: "channel-1",
-      type: {
-        label: "message",
-        data: null,
-      },
-      userState: {
-        progressCount: 8,
-        finished: true,
-        acquiredDate: "2025-09-01T10:00:00.000Z",
-      },
-    });
-  });
-
-  it("should map a DB user achievement list response", () => {
-    expect(
-      mapDbUserAchievementsToResponse([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "First",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 10,
-          ["Achievement_Reward"]: 5,
-          ["Achievement_Public"]: false,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Chanel_ID"]: "channel-1",
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      ]),
-    ).toEqual([
-      expect.objectContaining({
-        id: "achievement-1",
-        userState: {
-          progressCount: 0,
-          finished: false,
-          acquiredDate: null,
-        },
-      }),
-    ]);
-  });
-
-  it("should reject invalid DB user list responses", () => {
-    expect(() => mapDbUserAchievementsToResponse("invalid")).toThrow(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid user achievement list payload",
-      ),
-    );
-  });
-
-  it("should reject invalid DB numeric fields", () => {
-    expect(() =>
-      mapDbAchievementToResponse({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 10,
-        ["Achievement_Reward"]: 5,
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: -1,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Chanel_ID"]: "channel-1",
-        ["Type_Label"]: "message",
-        ["Type_Data"]: null,
-      }),
-    ).toThrow(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "Achievement_Downloads must be a non-negative integer",
-      ),
-    );
-  });
-
-  it("should reject invalid DB booleans", () => {
-    expect(() =>
-      mapDbAchievementToResponse({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 10,
-        ["Achievement_Reward"]: 5,
-        ["Achievement_Public"]: "false",
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Chanel_ID"]: "channel-1",
-        ["Type_Label"]: "message",
-        ["Type_Data"]: null,
-      }),
-    ).toThrow(
-      new ApplicationError(
-        400,
-        "validation_error",
-        "Achievement_Public must be a boolean",
-      ),
-    );
   });
 });

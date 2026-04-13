@@ -31,23 +31,33 @@ interface AchievementAiServiceDependencies {
   aiClient: AiAchievementClient;
 }
 
+async function invalidateChannelCacheIfNeeded(
+  channelId: string | null,
+  notificationClient: NotificationCacheClient,
+  message: string,
+): Promise<void> {
+  if (!channelId) {
+    return;
+  }
+
+  try {
+    await notificationClient.invalidateChannelCache(channelId);
+  } catch {
+    throw new ApplicationError(502, "notification_handler_error", message);
+  }
+}
+
 async function createAchievementWithDependencies(
   payload: CreateAchievementRequest,
   dependencies: AchievementServiceDependencies,
 ): Promise<Achievement> {
   const achievement = await dependencies.dbClient.createAchievement(payload);
 
-  try {
-    await dependencies.notificationClient.invalidateChannelCache(
-      achievement.channelId,
-    );
-  } catch {
-    throw new ApplicationError(
-      502,
-      "notification_handler_error",
-      "Notification handler cache invalidation failed after achievement creation",
-    );
-  }
+  await invalidateChannelCacheIfNeeded(
+    achievement.channelId,
+    dependencies.notificationClient,
+    "Notification handler cache invalidation failed after achievement creation",
+  );
 
   return achievement;
 }
@@ -165,17 +175,11 @@ async function updateAchievementWithDependencies(
     payload,
   );
 
-  try {
-    await dependencies.notificationClient.invalidateChannelCache(
-      achievement.channelId,
-    );
-  } catch {
-    throw new ApplicationError(
-      502,
-      "notification_handler_error",
-      "Notification handler cache invalidation failed after achievement update",
-    );
-  }
+  await invalidateChannelCacheIfNeeded(
+    achievement.channelId,
+    dependencies.notificationClient,
+    "Notification handler cache invalidation failed after achievement update",
+  );
 
   return achievement;
 }
@@ -197,17 +201,11 @@ async function deleteAchievementWithDependencies(
   const achievement =
     await dependencies.dbClient.deleteAchievement(achievementId);
 
-  try {
-    await dependencies.notificationClient.invalidateChannelCache(
-      achievement.channelId,
-    );
-  } catch {
-    throw new ApplicationError(
-      502,
-      "notification_handler_error",
-      "Notification handler cache invalidation failed after achievement deletion",
-    );
-  }
+  await invalidateChannelCacheIfNeeded(
+    achievement.channelId,
+    dependencies.notificationClient,
+    "Notification handler cache invalidation failed after achievement deletion",
+  );
 
   return achievement;
 }
@@ -226,17 +224,11 @@ async function deactivateAchievementWithDependencies(
   const achievement =
     await dependencies.dbClient.deactivateAchievement(achievementId);
 
-  try {
-    await dependencies.notificationClient.invalidateChannelCache(
-      achievement.channelId,
-    );
-  } catch {
-    throw new ApplicationError(
-      502,
-      "notification_handler_error",
-      "Notification handler cache invalidation failed after achievement deactivation",
-    );
-  }
+  await invalidateChannelCacheIfNeeded(
+    achievement.channelId,
+    dependencies.notificationClient,
+    "Notification handler cache invalidation failed after achievement deactivation",
+  );
 
   return achievement;
 }
@@ -257,17 +249,11 @@ async function activateAchievementWithDependencies(
   const achievement =
     await dependencies.dbClient.activateAchievement(achievementId);
 
-  try {
-    await dependencies.notificationClient.invalidateChannelCache(
-      achievement.channelId,
-    );
-  } catch {
-    throw new ApplicationError(
-      502,
-      "notification_handler_error",
-      "Notification handler cache invalidation failed after achievement activation",
-    );
-  }
+  await invalidateChannelCacheIfNeeded(
+    achievement.channelId,
+    dependencies.notificationClient,
+    "Notification handler cache invalidation failed after achievement activation",
+  );
 
   return achievement;
 }

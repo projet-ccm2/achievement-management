@@ -5,6 +5,9 @@ import prettierPlugin from "eslint-plugin-prettier";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 
 export default [
+  {
+    ignores: ["dist/**"],
+  },
   js.configs.recommended,
   {
     files: ["**/*.ts", "**/*.tsx"],

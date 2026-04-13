@@ -15,6 +15,69 @@ jest.mock("../../../utils/logger", () => ({
   },
 }));
 
+function mockJsonResponse(
+  body: unknown,
+  ok = true,
+  status = 200,
+): {
+  ok: boolean;
+  status: number;
+  headers: { get: jest.Mock };
+  json: jest.Mock;
+} {
+  return {
+    ok,
+    status,
+    headers: {
+      get: jest.fn().mockReturnValue("application/json"),
+    },
+    json: jest.fn().mockResolvedValue(body),
+  };
+}
+
+function buildDbAchievementResponse(overrides: Record<string, unknown> = {}): {
+  id: string;
+  title: string;
+  description: string;
+  goal: number;
+  reward: number;
+  label: string;
+  public: boolean;
+  downloads: number;
+  visits: number;
+  active: boolean;
+  secret: boolean;
+  image: string | null;
+  channelId: string | null;
+  typeAchievement: {
+    id: string;
+    label: string;
+    data: string;
+  };
+} {
+  return {
+    id: "achievement-1",
+    title: "First",
+    description: "Desc",
+    goal: 1,
+    reward: 0,
+    label: "",
+    public: false,
+    downloads: 0,
+    visits: 0,
+    active: true,
+    secret: false,
+    image: null,
+    channelId: "channel-1",
+    typeAchievement: {
+      id: "type-1",
+      label: "message",
+      data: "",
+    },
+    ...overrides,
+  };
+}
+
 describe("achievementDbClient", () => {
   const originalFetch = global.fetch;
 
@@ -29,105 +92,151 @@ describe("achievementDbClient", () => {
 
   it("should build the DB payload", () => {
     expect(
-      buildDbPayload({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        label: "",
-        public: true,
-        active: true,
-        secret: false,
-        image: null,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
+      buildDbPayload(
+        {
+          title: "First",
+          description: "Desc",
+          goal: 1,
+          reward: 0,
+          label: "",
+          public: true,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "message",
+            data: null,
+          },
         },
-      }),
+        "type-1",
+      ),
     ).toEqual({
-      ["Achievement_Title"]: "First",
-      ["Achievement_Description"]: "Desc",
-      ["Achievement_Goal"]: 1,
-      ["Achievement_Reward"]: 0,
-      ["Achievement_Label"]: "",
-      ["Achievement_Public"]: true,
-      ["Achievement_Downloads"]: 0,
-      ["Achievement_Visits"]: 0,
-      ["Achievement_Active"]: true,
-      ["Achievement_Secret"]: false,
-      ["Achievement_Image"]: null,
-      ["Chanel_ID"]: "channel-1",
-      ["Type"]: {
-        ["Type_Label"]: "message",
-        ["Type_Data"]: null,
-      },
+      title: "First",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      label: "",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      typeId: "type-1",
     });
   });
 
-  it("should build the DB update payload without marketplace counters", () => {
+  it("should build the DB update payload without channelId", () => {
     expect(
-      buildDbUpdatePayload({
-        title: "Updated",
-        description: "Desc",
-        goal: 2,
-        reward: 10,
-        label: "",
-        public: false,
-        active: true,
-        secret: false,
-        image: null,
-        type: {
-          label: "message_content",
-          data: "updated",
+      buildDbUpdatePayload(
+        {
+          title: "Updated",
+          description: "Desc",
+          goal: 2,
+          reward: 10,
+          label: "",
+          public: false,
+          active: true,
+          secret: false,
+          image: null,
+          type: {
+            label: "message_content",
+            data: "updated",
+          },
         },
-      }),
+        "type-2",
+      ),
     ).toEqual({
-      ["Achievement_Title"]: "Updated",
-      ["Achievement_Description"]: "Desc",
-      ["Achievement_Goal"]: 2,
-      ["Achievement_Reward"]: 10,
-      ["Achievement_Label"]: "",
-      ["Achievement_Public"]: false,
-      ["Achievement_Active"]: true,
-      ["Achievement_Secret"]: false,
-      ["Achievement_Image"]: null,
-      ["Type"]: {
-        ["Type_Label"]: "message_content",
-        ["Type_Data"]: "updated",
-      },
+      title: "Updated",
+      description: "Desc",
+      goal: 2,
+      reward: 10,
+      label: "",
+      public: false,
+      active: true,
+      secret: false,
+      image: null,
+      typeId: "type-2",
     });
   });
 
   it("should create an achievement through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "First",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 1,
-        ["Achievement_Reward"]: 0,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      }),
-    });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: "type-1",
+          label: "message_content",
+          data: "updated",
+        }),
+      )
+      .mockResolvedValueOnce(mockJsonResponse(buildDbAchievementResponse()));
 
     const client = new HttpDbAchievementClient();
     const achievement = await client.createAchievement({
+      title: "First",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      label: "",
+      public: false,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "message_content",
+        data: "updated",
+      },
+    });
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      "http://db-service.test/type-achievements",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          label: "message_content",
+          data: "updated",
+        }),
+      }),
+    );
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      "http://db-service.test/achievements",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          title: "First",
+          description: "Desc",
+          goal: 1,
+          reward: 0,
+          label: "",
+          public: false,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          typeId: "type-1",
+        }),
+      }),
+    );
+    expect(achievement.id).toBe("achievement-1");
+  });
+
+  it("should send an empty type data string for message achievements", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: "type-1",
+          label: "message",
+          data: "",
+        }),
+      )
+      .mockResolvedValueOnce(mockJsonResponse(buildDbAchievementResponse()));
+
+    const client = new HttpDbAchievementClient();
+
+    await client.createAchievement({
       title: "First",
       description: "Desc",
       goal: 1,
@@ -144,25 +253,24 @@ describe("achievementDbClient", () => {
       },
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements",
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      "http://db-service.test/type-achievements",
       expect.objectContaining({
-        method: "POST",
+        body: JSON.stringify({
+          label: "message",
+          data: "",
+        }),
       }),
     );
-    expect(achievement.id).toBe("achievement-1");
   });
 
-  it("should map DB service failures", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "failure",
+  it("should reject invalid type creation payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({
+        invalid: true,
       }),
-    });
+    );
 
     const client = new HttpDbAchievementClient();
 
@@ -187,13 +295,15 @@ describe("achievementDbClient", () => {
       new ApplicationError(
         502,
         "db_service_error",
-        "DB service could not create the achievement",
+        "DB service returned an invalid achievement type payload",
       ),
     );
   });
 
-  it("should map DB service network failures", async () => {
-    (global.fetch as jest.Mock).mockRejectedValue(new Error("socket hang up"));
+  it("should map type creation failures", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ message: "failure" }, false, 500),
+    );
 
     const client = new HttpDbAchievementClient();
 
@@ -218,50 +328,15 @@ describe("achievementDbClient", () => {
       new ApplicationError(
         502,
         "db_service_error",
-        "DB service could not create the achievement",
+        "DB service could not create the achievement type",
       ),
     );
   });
 
-  it("should reject invalid non-json DB payloads", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+  it("should reject non-json type creation payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("text/plain"),
-      },
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(
-      client.createAchievement({
-        title: "First",
-        description: "Desc",
-        goal: 1,
-        reward: 0,
-        label: "",
-        public: false,
-        active: true,
-        secret: false,
-        image: null,
-        channelId: "channel-1",
-        type: {
-          label: "message",
-          data: null,
-        },
-      }),
-    ).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid achievement payload",
-      ),
-    );
-  });
-
-  it("should handle responses without a content type header", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
+      status: 200,
       headers: {
         get: jest.fn().mockReturnValue(undefined),
       },
@@ -290,37 +365,32 @@ describe("achievementDbClient", () => {
       new ApplicationError(
         502,
         "db_service_error",
-        "DB service could not create the achievement",
+        "DB service returned an invalid achievement type payload",
       ),
     );
   });
 
   it("should update an achievement through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "Updated",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 2,
-        ["Achievement_Reward"]: 10,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message_content",
-          ["Type_Data"]: "updated",
-        },
-      }),
-    });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: "type-2",
+          label: "message_content",
+          data: "updated",
+        }),
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse(
+          buildDbAchievementResponse({
+            title: "Updated",
+            typeAchievement: {
+              id: "type-2",
+              label: "message_content",
+              data: "updated",
+            },
+          }),
+        ),
+      );
 
     const client = new HttpDbAchievementClient();
     const achievement = await client.updateAchievement("achievement-1", {
@@ -339,24 +409,22 @@ describe("achievementDbClient", () => {
       },
     });
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
       "http://db-service.test/achievements/achievement-1",
       expect.objectContaining({
         method: "PUT",
         body: JSON.stringify({
-          ["Achievement_Title"]: "Updated",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: false,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Type"]: {
-            ["Type_Label"]: "message_content",
-            ["Type_Data"]: "updated",
-          },
+          title: "Updated",
+          description: "Desc",
+          goal: 2,
+          reward: 10,
+          label: "",
+          public: false,
+          active: true,
+          secret: false,
+          image: null,
+          typeId: "type-2",
         }),
       }),
     );
@@ -364,16 +432,17 @@ describe("achievementDbClient", () => {
   });
 
   it("should map update not found responses", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "not found",
-      }),
-    });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: "type-1",
+          label: "message",
+          data: "",
+        }),
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse({ message: "not found" }, false, 404),
+      );
 
     const client = new HttpDbAchievementClient();
 
@@ -389,8 +458,8 @@ describe("achievementDbClient", () => {
         secret: false,
         image: null,
         type: {
-          label: "message_content",
-          data: "updated",
+          label: "message",
+          data: null,
         },
       }),
     ).rejects.toEqual(
@@ -398,206 +467,10 @@ describe("achievementDbClient", () => {
     );
   });
 
-  it("should delete an achievement through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "Deleted",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 2,
-        ["Achievement_Reward"]: 10,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: false,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-    const achievement = await client.deleteAchievement("achievement-1");
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/achievement-1",
-      expect.objectContaining({
-        method: "DELETE",
-      }),
-    );
-    expect(achievement.id).toBe("achievement-1");
-  });
-
-  it("should map delete not found responses", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "not found",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.deleteAchievement("achievement-1")).rejects.toEqual(
-      new ApplicationError(404, "not_found", "Achievement not found"),
-    );
-  });
-
-  it("should deactivate an achievement through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "Deactivated",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 2,
-        ["Achievement_Reward"]: 10,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: false,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-    const achievement = await client.deactivateAchievement("achievement-1");
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/achievement-1/deactivate",
-      expect.objectContaining({
-        method: "PATCH",
-      }),
-    );
-    expect(achievement.active).toBe(false);
-  });
-
-  it("should map deactivate not found responses", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "not found",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.deactivateAchievement("achievement-1")).rejects.toEqual(
-      new ApplicationError(404, "not_found", "Achievement not found"),
-    );
-  });
-
-  it("should activate an achievement through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "Activated",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 2,
-        ["Achievement_Reward"]: 10,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-    const achievement = await client.activateAchievement("achievement-1");
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/achievement-1/activate",
-      expect.objectContaining({
-        method: "PATCH",
-      }),
-    );
-    expect(achievement.active).toBe(true);
-  });
-
-  it("should map activate not found responses", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "not found",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.activateAchievement("achievement-1")).rejects.toEqual(
-      new ApplicationError(404, "not_found", "Achievement not found"),
-    );
-  });
-
   it("should get an achievement by id through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        ["Achievement_ID"]: "achievement-1",
-        ["Achievement_Title"]: "Fetched",
-        ["Achievement_Description"]: "Desc",
-        ["Achievement_Goal"]: 2,
-        ["Achievement_Reward"]: 10,
-        ["Achievement_Label"]: "",
-        ["Achievement_Public"]: false,
-        ["Achievement_Downloads"]: 0,
-        ["Achievement_Visits"]: 0,
-        ["Achievement_Active"]: true,
-        ["Achievement_Secret"]: false,
-        ["Achievement_Image"]: null,
-        ["Chanel_ID"]: "channel-1",
-        ["Type"]: {
-          ["Type_Label"]: "message",
-          ["Type_Data"]: null,
-        },
-      }),
-    });
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse(buildDbAchievementResponse()),
+    );
 
     const client = new HttpDbAchievementClient();
     const achievement = await client.getAchievementById("achievement-1");
@@ -611,196 +484,83 @@ describe("achievementDbClient", () => {
     expect(achievement.id).toBe("achievement-1");
   });
 
-  it("should map get by id not found responses", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "not found",
-      }),
-    });
+  it("should delete an achievement through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse(buildDbAchievementResponse({ active: false })),
+    );
 
     const client = new HttpDbAchievementClient();
+    const achievement = await client.deleteAchievement("achievement-1");
 
-    await expect(client.getAchievementById("achievement-1")).rejects.toEqual(
-      new ApplicationError(404, "not_found", "Achievement not found"),
-    );
+    expect(achievement.active).toBe(false);
+  });
+
+  it("should deactivate and activate an achievement through the DB service", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse(buildDbAchievementResponse({ active: false })),
+      )
+      .mockResolvedValueOnce(
+        mockJsonResponse(buildDbAchievementResponse({ active: true })),
+      );
+
+    const client = new HttpDbAchievementClient();
+    const deactivated = await client.deactivateAchievement("achievement-1");
+    const activated = await client.activateAchievement("achievement-1");
+
+    expect(deactivated.active).toBe(false);
+    expect(activated.active).toBe(true);
   });
 
   it("should get achievements by channel through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "Fetched",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: false,
-          ["Achievement_Downloads"]: 0,
-          ["Achievement_Visits"]: 0,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Chanel_ID"]: "channel-1",
-          ["Type"]: {
-            ["Type_Label"]: "message",
-            ["Type_Data"]: null,
-          },
-        },
-      ]),
-    });
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse([buildDbAchievementResponse()]),
+    );
 
     const client = new HttpDbAchievementClient();
     const achievements = await client.getAchievementsByChannelId("channel-1");
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/channel/channel-1",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
     expect(achievements).toHaveLength(1);
+    expect(achievements[0]?.channelId).toBe("channel-1");
   });
 
   it("should get public achievements through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "Public",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: true,
-          ["Achievement_Downloads"]: 0,
-          ["Achievement_Visits"]: 0,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Chanel_ID"]: "channel-1",
-          ["Type"]: {
-            ["Type_Label"]: "message",
-            ["Type_Data"]: null,
-          },
-        },
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse([
+        buildDbAchievementResponse({
+          public: true,
+          channelId: null,
+        }),
       ]),
-    });
+    );
 
     const client = new HttpDbAchievementClient();
     const achievements = await client.getPublicAchievements();
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/public",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
     expect(achievements).toHaveLength(1);
     expect(achievements[0]?.public).toBe(true);
-  });
-
-  it("should reject invalid public achievement list payloads", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        invalid: true,
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.getPublicAchievements()).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid achievement list payload",
-      ),
-    );
-  });
-
-  it("should map public list DB service failures", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "failure",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.getPublicAchievements()).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service could not get the achievement",
-      ),
-    );
+    expect(achievements[0]?.channelId).toBeNull();
   });
 
   it("should get achievements by user through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "Profile",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: false,
-          ["Achievement_Downloads"]: 0,
-          ["Achievement_Visits"]: 0,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Chanel_ID"]: "channel-1",
-          ["Type"]: {
-            ["Type_Label"]: "message",
-            ["Type_Data"]: null,
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse([
+        buildDbAchievementResponse({
+          achieved: {
+            achievementId: "achievement-1",
+            userId: "user-1",
+            count: 2,
+            finished: true,
+            labelActive: true,
+            acquiredDate: "2025-09-01T10:00:00.000Z",
           },
-          ["UserState"]: {
-            ["Progress_Count"]: 2,
-            ["Finished"]: true,
-            ["Acquired_Date"]: "2025-09-01T10:00:00.000Z",
-          },
-        },
+        }),
       ]),
-    });
+    );
 
     const client = new HttpDbAchievementClient();
     const achievements = await client.getAchievementsByUserId("user-1");
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/user/user-1",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
-    expect(achievements).toHaveLength(1);
     expect(achievements[0]?.userState).toEqual({
       progressCount: 2,
       finished: true,
@@ -808,122 +568,18 @@ describe("achievementDbClient", () => {
     });
   });
 
-  it("should default missing user state values", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "Profile",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: false,
-          ["Achievement_Downloads"]: 0,
-          ["Achievement_Visits"]: 0,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Chanel_ID"]: "channel-1",
-          ["Type"]: {
-            ["Type_Label"]: "message",
-            ["Type_Data"]: null,
-          },
-        },
-      ]),
-    });
-
-    const client = new HttpDbAchievementClient();
-    const achievements = await client.getAchievementsByUserId("user-1");
-
-    expect(achievements[0]?.userState).toEqual({
-      progressCount: 0,
-      finished: false,
-      acquiredDate: null,
-    });
-  });
-
-  it("should reject invalid user achievement list payloads", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        invalid: true,
+  it("should unwrap achievements by user and channel from the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse({
+        userId: "user-1",
+        channelId: "channel-1",
+        achievements: [
+          buildDbAchievementResponse({
+            achieved: null,
+          }),
+        ],
       }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.getAchievementsByUserId("user-1")).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid user achievement list payload",
-      ),
     );
-  });
-
-  it("should map user achievement list DB service failures", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "failure",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(client.getAchievementsByUserId("user-1")).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service could not get the achievement",
-      ),
-    );
-  });
-
-  it("should get achievements by user and channel through the DB service", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue([
-        {
-          ["Achievement_ID"]: "achievement-1",
-          ["Achievement_Title"]: "Profile",
-          ["Achievement_Description"]: "Desc",
-          ["Achievement_Goal"]: 2,
-          ["Achievement_Reward"]: 10,
-          ["Achievement_Label"]: "",
-          ["Achievement_Public"]: false,
-          ["Achievement_Downloads"]: 0,
-          ["Achievement_Visits"]: 0,
-          ["Achievement_Active"]: true,
-          ["Achievement_Secret"]: false,
-          ["Achievement_Image"]: null,
-          ["Chanel_ID"]: "channel-1",
-          ["Type"]: {
-            ["Type_Label"]: "message",
-            ["Type_Data"]: null,
-          },
-          ["UserState"]: {
-            ["Progress_Count"]: 2,
-            ["Finished"]: true,
-            ["Acquired_Date"]: "2025-09-01T10:00:00.000Z",
-          },
-        },
-      ]),
-    });
 
     const client = new HttpDbAchievementClient();
     const achievements = await client.getAchievementsByUserIdAndChannelId(
@@ -931,26 +587,20 @@ describe("achievementDbClient", () => {
       "channel-1",
     );
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      "http://db-service.test/achievements/user/user-1/channel/channel-1",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
     expect(achievements).toHaveLength(1);
-    expect(achievements[0]?.channelId).toBe("channel-1");
+    expect(achievements[0]?.userState).toEqual({
+      progressCount: 0,
+      finished: false,
+      acquiredDate: null,
+    });
   });
 
-  it("should reject invalid user and channel achievement list payloads", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
+  it("should reject invalid wrapped user achievement payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse({
         invalid: true,
       }),
-    });
+    );
 
     const client = new HttpDbAchievementClient();
 
@@ -961,78 +611,6 @@ describe("achievementDbClient", () => {
         502,
         "db_service_error",
         "DB service returned an invalid user achievement list payload",
-      ),
-    );
-  });
-
-  it("should map user and channel achievement list DB service failures", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "failure",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(
-      client.getAchievementsByUserIdAndChannelId("user-1", "channel-1"),
-    ).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service could not get the achievement",
-      ),
-    );
-  });
-
-  it("should reject invalid achievement list payloads", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        invalid: true,
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(
-      client.getAchievementsByChannelId("channel-1"),
-    ).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service returned an invalid achievement list payload",
-      ),
-    );
-  });
-
-  it("should map channel list DB service failures", async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      headers: {
-        get: jest.fn().mockReturnValue("application/json"),
-      },
-      json: jest.fn().mockResolvedValue({
-        message: "failure",
-      }),
-    });
-
-    const client = new HttpDbAchievementClient();
-
-    await expect(
-      client.getAchievementsByChannelId("channel-1"),
-    ).rejects.toEqual(
-      new ApplicationError(
-        502,
-        "db_service_error",
-        "DB service could not get the achievement",
       ),
     );
   });

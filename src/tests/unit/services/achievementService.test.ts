@@ -128,6 +128,50 @@ describe("achievementService", () => {
     );
   });
 
+  it("should skip cache invalidation when channelId is null", async () => {
+    const dbClient = {
+      createAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: null,
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn(),
+    };
+
+    const achievement = await createAchievementWithDependencies(payload, {
+      dbClient,
+      notificationClient,
+    });
+
+    expect(notificationClient.invalidateChannelCache).not.toHaveBeenCalled();
+    expect(achievement.channelId).toBeNull();
+  });
+
   it("should use the default dependencies in createAchievement", async () => {
     jest.resetModules();
 
