@@ -435,7 +435,7 @@ describe("achievementDbClient", () => {
         400,
         "db_service_validation_error",
         "DB service validation failed for achievement type",
-        { error: "bad" }
+        { error: "bad" },
       ),
     );
   });
@@ -469,7 +469,7 @@ describe("achievementDbClient", () => {
         422,
         "db_service_validation_error",
         "DB service validation failed for achievement type",
-        { error: "bad" }
+        { error: "bad" },
       ),
     );
   });
@@ -503,7 +503,7 @@ describe("achievementDbClient", () => {
         403,
         "db_service_error",
         "DB service could not create the achievement type",
-        { error: "forbidden" }
+        { error: "forbidden" },
       ),
     );
   });
@@ -617,7 +617,7 @@ describe("achievementDbClient", () => {
         400,
         "db_service_validation_error",
         "DB service validation failed during get",
-        { field: "invalid" }
+        { field: "invalid" },
       ),
     );
   });
@@ -634,7 +634,7 @@ describe("achievementDbClient", () => {
         422,
         "db_service_validation_error",
         "DB service validation failed during get",
-        { field: "invalid" }
+        { field: "invalid" },
       ),
     );
   });
@@ -651,7 +651,7 @@ describe("achievementDbClient", () => {
         502,
         "db_service_error",
         "DB service could not get the achievement",
-        { message: "failed" }
+        { message: "failed" },
       ),
     );
   });
@@ -668,7 +668,7 @@ describe("achievementDbClient", () => {
         403,
         "db_service_error",
         "DB service could not get the achievement",
-        { message: "forbidden" }
+        { message: "forbidden" },
       ),
     );
   });

@@ -47,7 +47,9 @@ describe("errorHandler", () => {
     } as unknown as Response;
 
     errorHandler(
-      new ApplicationError(422, "business_rule", "rule violated", { field: "email" }),
+      new ApplicationError(422, "business_rule", "rule violated", {
+        field: "email",
+      }),
       {
         method: "POST",
         originalUrl: "/achievements",
