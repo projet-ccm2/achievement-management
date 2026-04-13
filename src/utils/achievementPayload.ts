@@ -1,0 +1,506 @@
+import { ApplicationError } from "../middlewares/errorHandler";
+import {
+  Achievement,
+  AchievementSuggestion,
+  UserAchievement,
+} from "../models/achievement";
+
+const supportedTriggerLabels = [
+  "message",
+  "message_content",
+  "channel_point_cost",
+  "redeem_channel_point",
+  "api_caller",
+] as const;
+
+type SupportedTriggerLabel = (typeof supportedTriggerLabels)[number];
+
+interface CreateAchievementRequest {
+  title: string;
+  description: string;
+  goal: number;
+  reward: number;
+  label: string;
+  public: boolean;
+  active: boolean;
+  secret: boolean;
+  image: string | null;
+  channelId: string;
+  type: {
+    label: SupportedTriggerLabel;
+    data: string | null;
+  };
+}
+
+interface UpdateAchievementRequest {
+  title: string;
+  description: string;
+  goal: number;
+  reward: number;
+  label: string;
+  public: boolean;
+  active: boolean;
+  secret: boolean;
+  image: string | null;
+  type: {
+    label: SupportedTriggerLabel;
+    data: string | null;
+  };
+}
+
+interface AiSuggestionRequest {
+  prompt: string;
+}
+
+type CreateAchievementResponse = Achievement;
+type UpdateAchievementResponse = Achievement;
+type AiSuggestionResponse = AchievementSuggestion;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readRequiredString(
+  value: unknown,
+  fieldName: string,
+  allowEmpty = false,
+): string {
+  if (typeof value !== "string") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a string`,
+    );
+  }
+
+  const normalizedValue = value.trim();
+
+  if (!allowEmpty && normalizedValue.length === 0) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} is required`,
+    );
+  }
+
+  return normalizedValue;
+}
+
+function readOptionalImage(value: unknown): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return readRequiredString(value, "image");
+}
+
+function readBoolean(value: unknown, fieldName: string): boolean {
+  if (typeof value !== "boolean") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a boolean`,
+    );
+  }
+
+  return value;
+}
+
+function readPositiveInteger(value: unknown, fieldName: string): number {
+  if (!Number.isInteger(value) || Number(value) <= 0) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a positive integer`,
+    );
+  }
+
+  return Number(value);
+}
+
+function readNonNegativeInteger(value: unknown, fieldName: string): number {
+  if (!Number.isInteger(value) || Number(value) < 0) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a non-negative integer`,
+    );
+  }
+
+  return Number(value);
+}
+
+function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
+  const normalizedValue = value
+    .trim()
+    .toLowerCase()
+    .split(/[\s-]+/g)
+    .join("_");
+
+  if (
+    !supportedTriggerLabels.includes(normalizedValue as SupportedTriggerLabel)
+  ) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "type.label is not supported",
+    );
+  }
+
+  return normalizedValue as SupportedTriggerLabel;
+}
+
+function normalizeTypeData(
+  label: SupportedTriggerLabel,
+  value: unknown,
+): string | null {
+  if (label === "message") {
+    return null;
+  }
+
+  if (label === "channel_point_cost") {
+    if (
+      (!Number.isInteger(value) || Number(value) <= 0) &&
+      typeof value !== "string"
+    ) {
+      throw new ApplicationError(
+        400,
+        "validation_error",
+        "type.data must be a positive integer or numeric string for channel_point_cost",
+      );
+    }
+
+    const normalizedValue = String(value).trim();
+
+    if (!/^\d+$/.test(normalizedValue) || Number(normalizedValue) <= 0) {
+      throw new ApplicationError(
+        400,
+        "validation_error",
+        "type.data must be a positive integer or numeric string for channel_point_cost",
+      );
+    }
+
+    return normalizedValue;
+  }
+
+  return readRequiredString(value, "type.data");
+}
+
+function parseCreateAchievementRequest(
+  body: unknown,
+): CreateAchievementRequest {
+  const parsedPayload = parseAchievementDefinitionPayload(body);
+
+  return {
+    ...parsedPayload,
+    channelId: readRequiredString(
+      (body as Record<string, unknown>).channelId,
+      "channelId",
+    ),
+  };
+}
+
+function parseUpdateAchievementRequest(
+  body: unknown,
+): UpdateAchievementRequest {
+  return parseAchievementDefinitionPayload(body);
+}
+
+function parseAiSuggestionRequest(body: unknown): AiSuggestionRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  return {
+    prompt: readRequiredString(body.prompt, "prompt"),
+  };
+}
+
+function parseAchievementDefinitionPayload(
+  body: unknown,
+): Omit<CreateAchievementRequest, "channelId"> {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  if (!isRecord(body.type)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "type must be an object",
+    );
+  }
+
+  const triggerLabel = normalizeTriggerLabel(
+    readRequiredString(body.type.label, "type.label"),
+  );
+
+  return {
+    title: readRequiredString(body.title, "title"),
+    description: readRequiredString(body.description, "description"),
+    goal: readPositiveInteger(body.goal, "goal"),
+    reward: readNonNegativeInteger(body.reward, "reward"),
+    label:
+      body.label === undefined
+        ? ""
+        : readRequiredString(body.label, "label", true),
+    public: readBoolean(body.public, "public"),
+    active: readBoolean(body.active, "active"),
+    secret: readBoolean(body.secret, "secret"),
+    image: readOptionalImage(body.image),
+    type: {
+      label: triggerLabel,
+      data: normalizeTypeData(triggerLabel, body.type.data),
+    },
+  };
+}
+
+function parseDbType(body: Record<string, unknown>): {
+  label: SupportedTriggerLabel;
+  data: string | null;
+} {
+  let nestedType: Record<string, unknown> | undefined;
+
+  if (isRecord(body["typeAchievement"])) {
+    nestedType = body["typeAchievement"];
+  } else if (isRecord(body["Type"])) {
+    nestedType = body["Type"];
+  }
+  const labelSource =
+    nestedType?.["label"] ?? nestedType?.["Type_Label"] ?? body["Type_Label"];
+  const dataSource =
+    nestedType?.["data"] ??
+    nestedType?.["Type_Data"] ??
+    body["Type_Data"] ??
+    null;
+  const label = normalizeTriggerLabel(
+    readRequiredString(labelSource, "Type_Label"),
+  );
+
+  return {
+    label,
+    data: normalizeTypeData(label, dataSource),
+  };
+}
+
+function readOptionalNumber(value: unknown, fieldName: string): number {
+  if (value === undefined || value === null) {
+    return 0;
+  }
+
+  if (!Number.isInteger(value) || Number(value) < 0) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      `${fieldName} must be a non-negative integer`,
+    );
+  }
+
+  return Number(value);
+}
+
+function mapDbAchievementToResponse(body: unknown): Achievement {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement payload",
+    );
+  }
+
+  return {
+    id: readRequiredString(body["id"] ?? body["Achievement_ID"], "id"),
+    title: readRequiredString(
+      body["title"] ?? body["Achievement_Title"],
+      "title",
+    ),
+    description: readRequiredString(
+      body["description"] ?? body["Achievement_Description"],
+      "description",
+    ),
+    goal: readPositiveInteger(body["goal"] ?? body["Achievement_Goal"], "goal"),
+    reward: readNonNegativeInteger(
+      body["reward"] ?? body["Achievement_Reward"],
+      "reward",
+    ),
+    label:
+      (body["label"] ?? body["Achievement_Label"]) === undefined
+        ? ""
+        : readRequiredString(
+            body["label"] ?? body["Achievement_Label"],
+            "label",
+            true,
+          ),
+    public: readBoolean(body["public"] ?? body["Achievement_Public"], "public"),
+    downloads: readOptionalNumber(
+      body["downloads"] ?? body["Achievement_Downloads"],
+      "downloads",
+    ),
+    visits: readOptionalNumber(
+      body["visits"] ?? body["Achievement_Visits"],
+      "visits",
+    ),
+    active: readBoolean(body["active"] ?? body["Achievement_Active"], "active"),
+    secret: readBoolean(body["secret"] ?? body["Achievement_Secret"], "secret"),
+    image:
+      (body["image"] ?? body["Achievement_Image"]) === undefined ||
+      (body["image"] ?? body["Achievement_Image"]) === null
+        ? null
+        : readRequiredString(
+            body["image"] ?? body["Achievement_Image"],
+            "image",
+          ),
+    channelId:
+      (body["channelId"] ?? body["Chanel_ID"]) === undefined ||
+      (body["channelId"] ?? body["Chanel_ID"]) === null
+        ? null
+        : readRequiredString(
+            body["channelId"] ?? body["Chanel_ID"],
+            "channelId",
+          ),
+    type: parseDbType(body),
+  };
+}
+
+function mapDbAchievementsToResponse(body: unknown): Achievement[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement list payload",
+    );
+  }
+
+  return body.map((achievement) => mapDbAchievementToResponse(achievement));
+}
+
+function mapAiSuggestionToResponse(body: unknown): AchievementSuggestion {
+  const parsedSuggestion = parseAchievementDefinitionPayload(body);
+
+  return {
+    title: parsedSuggestion.title,
+    description: parsedSuggestion.description,
+    goal: parsedSuggestion.goal,
+    reward: parsedSuggestion.reward,
+    public: parsedSuggestion.public,
+    active: parsedSuggestion.active,
+    secret: parsedSuggestion.secret,
+    type: parsedSuggestion.type,
+  };
+}
+
+function readOptionalBoolean(
+  value: unknown,
+  fieldName: string,
+  defaultValue: boolean,
+): boolean {
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+
+  return readBoolean(value, fieldName);
+}
+
+function readOptionalNullableString(
+  value: unknown,
+  fieldName: string,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  return readRequiredString(value, fieldName);
+}
+
+function mapDbUserState(
+  body: Record<string, unknown>,
+): UserAchievement["userState"] {
+  const nestedAchieved = isRecord(body["achieved"]) ? body["achieved"] : {};
+  const nestedUserState = isRecord(body["UserState"]) ? body["UserState"] : {};
+  const progressCountSource =
+    nestedAchieved["count"] ??
+    nestedUserState["Progress_Count"] ??
+    nestedUserState["Count"] ??
+    body["count"] ??
+    body["Progress_Count"] ??
+    body["Count"];
+  const finishedSource =
+    nestedAchieved["finished"] ??
+    nestedUserState["Finished"] ??
+    body["Finished"];
+  const acquiredDateSource =
+    nestedAchieved["acquiredDate"] ??
+    nestedUserState["Acquired_Date"] ??
+    nestedUserState["Aquired_Date"] ??
+    body["acquiredDate"] ??
+    body["Acquired_Date"] ??
+    body["Aquired_Date"];
+
+  return {
+    progressCount: readOptionalNumber(progressCountSource, "Progress_Count"),
+    finished: readOptionalBoolean(finishedSource, "Finished", false),
+    acquiredDate: readOptionalNullableString(
+      acquiredDateSource,
+      "Acquired_Date",
+    ),
+  };
+}
+
+function mapDbUserAchievementToResponse(body: unknown): UserAchievement {
+  const achievement = mapDbAchievementToResponse(body);
+
+  return {
+    ...achievement,
+    userState: mapDbUserState(body as Record<string, unknown>),
+  };
+}
+
+function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
+  let achievementList: unknown[] | null = null;
+
+  if (Array.isArray(body)) {
+    achievementList = body;
+  } else if (isRecord(body) && Array.isArray(body["achievements"])) {
+    achievementList = body["achievements"];
+  }
+
+  if (!achievementList) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid user achievement list payload",
+    );
+  }
+
+  return achievementList.map((achievement) =>
+    mapDbUserAchievementToResponse(achievement),
+  );
+}
+
+export {
+  mapDbAchievementToResponse,
+  mapDbAchievementsToResponse,
+  mapDbUserAchievementToResponse,
+  mapDbUserAchievementsToResponse,
+  mapAiSuggestionToResponse,
+  parseAiSuggestionRequest,
+  parseCreateAchievementRequest,
+  parseUpdateAchievementRequest,
+  supportedTriggerLabels,
+};
+export type {
+  AiSuggestionRequest,
+  AiSuggestionResponse,
+  CreateAchievementRequest,
+  CreateAchievementResponse,
+  UpdateAchievementRequest,
+  UpdateAchievementResponse,
+};

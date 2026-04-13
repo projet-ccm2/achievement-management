@@ -1,0 +1,34 @@
+name: Deploy to Production
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to deploy (e.g., v1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  deploy-prod:
+    name: Deploy to Production
+    uses: projet-ccm2/shared-workflows/.github/workflows/nodejs-cd.yml@main
+    if: github.event_name != 'pull_request'
+    with:
+      docker-image-name: achievement-management-api-prod
+      docker-tag: ${{ github.event.inputs.image-tag || format('dev-{0}', github.sha) }}
+      artifact-registry-repository: "achievement-management-docker-prod"
+      environment: production
+      cloud-run-service-name: achievement-management-prod
+      service_type: "back_prive"
+      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_ALLOWED_ORIGINS"
+
+    secrets:
+      GCP_SA_KEY: ${{ secrets.PROD_GCP_SA_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.PROD_GCP_PROJECT_ID }}
+      DB_SERVICE_URL: ${{ secrets.PROD_DB_SERVICE_URL }}
+      IA_SERVICE_URL: ${{ secrets.PROD_IA_SERVICE_URL }}
+      NOTIFICATION_HANDLER_URL: ${{ secrets.PROD_NOTIFICATION_HANDLER_URL }}
+      ALLOWED_ORIGINS: ${{ secrets.PROD_ALLOWED_ORIGINS }}
+      TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
