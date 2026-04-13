@@ -53,7 +53,12 @@ function readAllowedOrigins(): string[] {
     if (process.env.NODE_ENV === "production") {
       throw new Error("ALLOWED_ORIGINS or FRONT_URL is required in production");
     }
-    return ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080", "null"];
+    return [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:8080",
+      "null",
+    ];
   }
 
   return origins;
