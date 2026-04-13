@@ -36,17 +36,27 @@ function readPort(): number {
 }
 
 function readAllowedOrigins(): string[] {
-  if (!process.env.ALLOWED_ORIGINS) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("ALLOWED_ORIGINS is required in production");
-    }
+  const origins: string[] = [];
 
-    return ["http://localhost:3000", "http://localhost:8080", "null"];
+  if (process.env.FRONT_URL) {
+    origins.push(process.env.FRONT_URL.trim());
   }
 
-  return process.env.ALLOWED_ORIGINS.split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
+  if (process.env.ALLOWED_ORIGINS) {
+    const parsedOrigins = process.env.ALLOWED_ORIGINS.split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    origins.push(...parsedOrigins);
+  }
+
+  if (origins.length === 0) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ALLOWED_ORIGINS or FRONT_URL is required in production");
+    }
+    return ["http://localhost:5173", "http://localhost:3000", "http://localhost:8080", "null"];
+  }
+
+  return origins;
 }
 
 function validateConfig(): Config {
