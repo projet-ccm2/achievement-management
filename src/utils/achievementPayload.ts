@@ -267,9 +267,20 @@ function parseDbType(body: Record<string, unknown>): {
   label: SupportedTriggerLabel;
   data: string | null;
 } {
-  const nestedType = isRecord(body["Type"]) ? body["Type"] : undefined;
-  const labelSource = nestedType?.["Type_Label"] ?? body["Type_Label"];
-  const dataSource = nestedType?.["Type_Data"] ?? body["Type_Data"] ?? null;
+  let nestedType: Record<string, unknown> | undefined;
+
+  if (isRecord(body["typeAchievement"])) {
+    nestedType = body["typeAchievement"];
+  } else if (isRecord(body["Type"])) {
+    nestedType = body["Type"];
+  }
+  const labelSource =
+    nestedType?.["label"] ?? nestedType?.["Type_Label"] ?? body["Type_Label"];
+  const dataSource =
+    nestedType?.["data"] ??
+    nestedType?.["Type_Data"] ??
+    body["Type_Data"] ??
+    null;
   const label = normalizeTriggerLabel(
     readRequiredString(labelSource, "Type_Label"),
   );
@@ -306,42 +317,55 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
   }
 
   return {
-    id: readRequiredString(body["Achievement_ID"], "Achievement_ID"),
-    title: readRequiredString(body["Achievement_Title"], "Achievement_Title"),
-    description: readRequiredString(
-      body["Achievement_Description"],
-      "Achievement_Description",
+    id: readRequiredString(body["id"] ?? body["Achievement_ID"], "id"),
+    title: readRequiredString(
+      body["title"] ?? body["Achievement_Title"],
+      "title",
     ),
-    goal: readPositiveInteger(body["Achievement_Goal"], "Achievement_Goal"),
+    description: readRequiredString(
+      body["description"] ?? body["Achievement_Description"],
+      "description",
+    ),
+    goal: readPositiveInteger(body["goal"] ?? body["Achievement_Goal"], "goal"),
     reward: readNonNegativeInteger(
-      body["Achievement_Reward"],
-      "Achievement_Reward",
+      body["reward"] ?? body["Achievement_Reward"],
+      "reward",
     ),
     label:
-      body["Achievement_Label"] === undefined
+      (body["label"] ?? body["Achievement_Label"]) === undefined
         ? ""
         : readRequiredString(
-            body["Achievement_Label"],
-            "Achievement_Label",
+            body["label"] ?? body["Achievement_Label"],
+            "label",
             true,
           ),
-    public: readBoolean(body["Achievement_Public"], "Achievement_Public"),
+    public: readBoolean(body["public"] ?? body["Achievement_Public"], "public"),
     downloads: readOptionalNumber(
-      body["Achievement_Downloads"],
-      "Achievement_Downloads",
+      body["downloads"] ?? body["Achievement_Downloads"],
+      "downloads",
     ),
     visits: readOptionalNumber(
-      body["Achievement_Visits"],
-      "Achievement_Visits",
+      body["visits"] ?? body["Achievement_Visits"],
+      "visits",
     ),
-    active: readBoolean(body["Achievement_Active"], "Achievement_Active"),
-    secret: readBoolean(body["Achievement_Secret"], "Achievement_Secret"),
+    active: readBoolean(body["active"] ?? body["Achievement_Active"], "active"),
+    secret: readBoolean(body["secret"] ?? body["Achievement_Secret"], "secret"),
     image:
-      body["Achievement_Image"] === undefined ||
-      body["Achievement_Image"] === null
+      (body["image"] ?? body["Achievement_Image"]) === undefined ||
+      (body["image"] ?? body["Achievement_Image"]) === null
         ? null
-        : readRequiredString(body["Achievement_Image"], "Achievement_Image"),
-    channelId: readRequiredString(body["Chanel_ID"], "Chanel_ID"),
+        : readRequiredString(
+            body["image"] ?? body["Achievement_Image"],
+            "image",
+          ),
+    channelId:
+      (body["channelId"] ?? body["Chanel_ID"]) === undefined ||
+      (body["channelId"] ?? body["Chanel_ID"]) === null
+        ? null
+        : readRequiredString(
+            body["channelId"] ?? body["Chanel_ID"],
+            "channelId",
+          ),
     type: parseDbType(body),
   };
 }
@@ -399,16 +423,24 @@ function readOptionalNullableString(
 function mapDbUserState(
   body: Record<string, unknown>,
 ): UserAchievement["userState"] {
+  const nestedAchieved = isRecord(body["achieved"]) ? body["achieved"] : {};
   const nestedUserState = isRecord(body["UserState"]) ? body["UserState"] : {};
   const progressCountSource =
+    nestedAchieved["count"] ??
     nestedUserState["Progress_Count"] ??
     nestedUserState["Count"] ??
+    body["count"] ??
     body["Progress_Count"] ??
     body["Count"];
-  const finishedSource = nestedUserState["Finished"] ?? body["Finished"];
+  const finishedSource =
+    nestedAchieved["finished"] ??
+    nestedUserState["Finished"] ??
+    body["Finished"];
   const acquiredDateSource =
+    nestedAchieved["acquiredDate"] ??
     nestedUserState["Acquired_Date"] ??
     nestedUserState["Aquired_Date"] ??
+    body["acquiredDate"] ??
     body["Acquired_Date"] ??
     body["Aquired_Date"];
 
@@ -432,7 +464,15 @@ function mapDbUserAchievementToResponse(body: unknown): UserAchievement {
 }
 
 function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
-  if (!Array.isArray(body)) {
+  let achievementList: unknown[] | null = null;
+
+  if (Array.isArray(body)) {
+    achievementList = body;
+  } else if (isRecord(body) && Array.isArray(body["achievements"])) {
+    achievementList = body["achievements"];
+  }
+
+  if (!achievementList) {
     throw new ApplicationError(
       502,
       "db_service_error",
@@ -440,7 +480,9 @@ function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
     );
   }
 
-  return body.map((achievement) => mapDbUserAchievementToResponse(achievement));
+  return achievementList.map((achievement) =>
+    mapDbUserAchievementToResponse(achievement),
+  );
 }
 
 export {

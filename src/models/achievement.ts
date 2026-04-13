@@ -16,7 +16,7 @@ interface Achievement {
   active: boolean;
   secret: boolean;
   image: string | null;
-  channelId: string;
+  channelId: string | null;
   type: AchievementType;
 }
 
