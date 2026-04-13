@@ -370,6 +370,144 @@ describe("achievementDbClient", () => {
     );
   });
 
+  it("should parse text DB responses successfully", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: { get: jest.fn().mockReturnValue("text/plain") },
+      text: jest.fn().mockResolvedValue("some-text-response"),
+    });
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.createAchievement({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement type payload",
+      ),
+    );
+  });
+
+  it("should map 400 validation error for type creation", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ error: "bad" }, false, 400),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.createAchievement({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        400,
+        "db_service_validation_error",
+        "DB service validation failed for achievement type",
+        { error: "bad" }
+      ),
+    );
+  });
+
+  it("should map 422 validation error for type creation", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ error: "bad" }, false, 422),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.createAchievement({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        422,
+        "db_service_validation_error",
+        "DB service validation failed for achievement type",
+        { error: "bad" }
+      ),
+    );
+  });
+
+  it("should map generic < 500 error for type creation", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ error: "forbidden" }, false, 403),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.createAchievement({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "message",
+          data: null,
+        },
+      }),
+    ).rejects.toEqual(
+      new ApplicationError(
+        403,
+        "db_service_error",
+        "DB service could not create the achievement type",
+        { error: "forbidden" }
+      ),
+    );
+  });
+
   it("should update an achievement through the DB service", async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce(
@@ -464,6 +602,74 @@ describe("achievementDbClient", () => {
       }),
     ).rejects.toEqual(
       new ApplicationError(404, "not_found", "Achievement not found"),
+    );
+  });
+
+  it("should map 400 validation error in mapDbError", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ field: "invalid" }, false, 400),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementById("achievement-1")).rejects.toEqual(
+      new ApplicationError(
+        400,
+        "db_service_validation_error",
+        "DB service validation failed during get",
+        { field: "invalid" }
+      ),
+    );
+  });
+
+  it("should map 422 validation error in mapDbError", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ field: "invalid" }, false, 422),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementById("achievement-1")).rejects.toEqual(
+      new ApplicationError(
+        422,
+        "db_service_validation_error",
+        "DB service validation failed during get",
+        { field: "invalid" }
+      ),
+    );
+  });
+
+  it("should map 500 error to 502 in mapDbError", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ message: "failed" }, false, 500),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementById("achievement-1")).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service could not get the achievement",
+        { message: "failed" }
+      ),
+    );
+  });
+
+  it("should map generic < 500 error in mapDbError", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse({ message: "forbidden" }, false, 403),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(client.getAchievementById("achievement-1")).rejects.toEqual(
+      new ApplicationError(
+        403,
+        "db_service_error",
+        "DB service could not get the achievement",
+        { message: "forbidden" }
+      ),
     );
   });
 
