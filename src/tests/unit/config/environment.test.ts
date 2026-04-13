@@ -30,6 +30,7 @@ describe("Environment Configuration", () => {
         "http://notification-handler.test",
       );
       expect(config.cors.allowedOrigins).toEqual([
+        "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:8080",
         "null",
@@ -78,6 +79,7 @@ describe("Environment Configuration", () => {
       const { config } = require("../../../config/environment");
 
       expect(config.cors.allowedOrigins).toEqual([
+        "http://localhost:5173",
         "http://localhost:3000",
         "http://localhost:8080",
         "null",
@@ -93,6 +95,17 @@ describe("Environment Configuration", () => {
       const { config } = require("../../../config/environment");
 
       expect(config.cors.allowedOrigins).toEqual(["https://single-origin.com"]);
+    });
+
+    it("should handle FRONT_URL", () => {
+      process.env.FRONT_URL = "https://front-url.com";
+      process.env.DB_SERVICE_URL = "http://db-service.test";
+      process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
+
+      const { config } = require("../../../config/environment");
+
+      expect(config.cors.allowedOrigins).toEqual(["https://front-url.com"]);
     });
 
     it("should fail clearly when a required service URL is missing", () => {
@@ -135,7 +148,7 @@ describe("Environment Configuration", () => {
 
       expect(() => {
         require("../../../config/environment");
-      }).toThrow("ALLOWED_ORIGINS is required in production");
+      }).toThrow("ALLOWED_ORIGINS or FRONT_URL is required in production");
     });
   });
 
