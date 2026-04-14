@@ -214,6 +214,7 @@ function parseCreateAchievementRequest(
 
   return {
     ...parsedPayload,
+    label: "",
     channelId: readRequiredString(
       (body as Record<string, unknown>).channelId,
       "channelId",

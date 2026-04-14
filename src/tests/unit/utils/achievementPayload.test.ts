@@ -46,7 +46,7 @@ describe("achievementPayload", () => {
       description: "Desc",
       goal: 5,
       reward: 0,
-      label: "custom",
+      label: "",
       public: true,
       active: true,
       secret: false,
@@ -55,6 +55,40 @@ describe("achievementPayload", () => {
       type: {
         label: "countRedeemChannelPoint",
         data: "reward",
+      },
+    });
+  });
+
+  it("should default create label to an empty string when omitted", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: "",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: null,
       },
     });
   });
