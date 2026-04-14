@@ -6,11 +6,11 @@ import {
 } from "../models/achievement";
 
 const supportedTriggerLabels = [
-  "message",
-  "message_content",
-  "channel_point_cost",
-  "redeem_channel_point",
-  "api_caller",
+  "countMessage",
+  "contentMessage",
+  "countCostChannelPoint",
+  "countRedeemChannelPoint",
+  "apicaller",
 ] as const;
 
 type SupportedTriggerLabel = (typeof supportedTriggerLabels)[number];
@@ -335,10 +335,10 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
       (body["label"] ?? body["Achievement_Label"]) === undefined
         ? ""
         : readRequiredString(
-            body["label"] ?? body["Achievement_Label"],
-            "label",
-            true,
-          ),
+          body["label"] ?? body["Achievement_Label"],
+          "label",
+          true,
+        ),
     public: readBoolean(body["public"] ?? body["Achievement_Public"], "public"),
     downloads: readOptionalNumber(
       body["downloads"] ?? body["Achievement_Downloads"],
@@ -352,20 +352,20 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
     secret: readBoolean(body["secret"] ?? body["Achievement_Secret"], "secret"),
     image:
       (body["image"] ?? body["Achievement_Image"]) === undefined ||
-      (body["image"] ?? body["Achievement_Image"]) === null
+        (body["image"] ?? body["Achievement_Image"]) === null
         ? null
         : readRequiredString(
-            body["image"] ?? body["Achievement_Image"],
-            "image",
-          ),
+          body["image"] ?? body["Achievement_Image"],
+          "image",
+        ),
     channelId:
       (body["channelId"] ?? body["Chanel_ID"]) === undefined ||
-      (body["channelId"] ?? body["Chanel_ID"]) === null
+        (body["channelId"] ?? body["Chanel_ID"]) === null
         ? null
         : readRequiredString(
-            body["channelId"] ?? body["Chanel_ID"],
-            "channelId",
-          ),
+          body["channelId"] ?? body["Chanel_ID"],
+          "channelId",
+        ),
     type: parseDbType(body),
   };
 }
