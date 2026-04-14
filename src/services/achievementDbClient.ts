@@ -37,12 +37,14 @@ function buildDbPayload(
   payload: CreateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
+  const normalizedLabel = payload.label === "" ? " " : payload.label;
+
   return {
     title: payload.title,
     description: payload.description,
     goal: payload.goal,
     reward: payload.reward,
-    label: payload.label,
+    label: normalizedLabel,
     public: payload.public,
     active: payload.active,
     secret: payload.secret,
@@ -56,12 +58,14 @@ function buildDbUpdatePayload(
   payload: UpdateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
+  const normalizedLabel = payload.label === "" ? " " : payload.label;
+
   return {
     title: payload.title,
     description: payload.description,
     goal: payload.goal,
     reward: payload.reward,
-    label: payload.label,
+    label: normalizedLabel,
     public: payload.public,
     active: payload.active,
     secret: payload.secret,
