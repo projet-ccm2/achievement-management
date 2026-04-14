@@ -38,7 +38,7 @@ describe("achievementAiClient", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),

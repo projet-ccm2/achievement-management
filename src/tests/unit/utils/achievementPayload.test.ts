@@ -15,11 +15,11 @@ import { ApplicationError } from "../../../middlewares/errorHandler";
 describe("achievementPayload", () => {
   it("should expose the supported trigger labels", () => {
     expect(supportedTriggerLabels).toEqual([
-      "message",
-      "message_content",
-      "channel_point_cost",
-      "redeem_channel_point",
-      "api_caller",
+      "countMessage",
+      "contentMessage",
+      "countCostChannelPoint",
+      "countRedeemChannelPoint",
+      "apicaller",
     ]);
   });
 
@@ -37,7 +37,7 @@ describe("achievementPayload", () => {
         image: " https://image.test/file.png ",
         channelId: " channel-1 ",
         type: {
-          label: "Redeem Channel Point",
+          label: "Count Redeem Channel Point",
           data: " reward ",
         },
       }),
@@ -53,7 +53,7 @@ describe("achievementPayload", () => {
       image: "https://image.test/file.png",
       channelId: "channel-1",
       type: {
-        label: "redeem_channel_point",
+        label: "countRedeemChannelPoint",
         data: "reward",
       },
     });
@@ -71,7 +71,7 @@ describe("achievementPayload", () => {
         secret: false,
         image: null,
         type: {
-          label: "message-content",
+          label: "Content Message",
           data: "updated",
         },
       }),
@@ -86,7 +86,7 @@ describe("achievementPayload", () => {
       secret: false,
       image: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -125,7 +125,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -143,7 +143,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -165,7 +165,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -208,7 +208,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "channel_point_cost",
+          label: "countCostChannelPoint",
           data: "abc",
         },
       }),
@@ -216,7 +216,7 @@ describe("achievementPayload", () => {
       new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       ),
     );
   });
@@ -275,7 +275,7 @@ describe("achievementPayload", () => {
       image: "https://image.test/file.png",
       channelId: null,
       type: {
-        label: "api_caller",
+        label: "apicaller",
         data: "event_key",
       },
     });
@@ -296,7 +296,7 @@ describe("achievementPayload", () => {
           channelId: "channel-1",
           typeAchievement: {
             id: "type-1",
-            label: "message",
+            label: "countMessage",
             data: "",
           },
         },
@@ -317,7 +317,7 @@ describe("achievementPayload", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -338,7 +338,7 @@ describe("achievementPayload", () => {
         channelId: "channel-1",
         typeAchievement: {
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         },
         achieved: {
@@ -365,7 +365,7 @@ describe("achievementPayload", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
       userState: {
@@ -394,7 +394,7 @@ describe("achievementPayload", () => {
             channelId: "channel-1",
             typeAchievement: {
               id: "type-1",
-              label: "message",
+              label: "countMessage",
               data: "",
             },
             achieved: null,
@@ -449,7 +449,7 @@ describe("achievementPayload", () => {
         channelId: "channel-1",
         typeAchievement: {
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         },
       }),
@@ -473,7 +473,7 @@ describe("achievementPayload", () => {
         active: true,
         secret: false,
         type: {
-          label: "Message Content",
+          label: "Content Message",
           data: " keyword ",
         },
       }),
@@ -486,7 +486,7 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "keyword",
       },
     });

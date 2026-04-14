@@ -15,6 +15,26 @@ const supportedTriggerLabels = [
 
 type SupportedTriggerLabel = (typeof supportedTriggerLabels)[number];
 
+const triggerLabelAliases = new Map<string, SupportedTriggerLabel>([
+  ["countmessage", "countMessage"],
+  ["count_message", "countMessage"],
+  ["message", "countMessage"],
+  ["contentmessage", "contentMessage"],
+  ["content_message", "contentMessage"],
+  ["messagecontent", "contentMessage"],
+  ["message_content", "contentMessage"],
+  ["countcostchannelpoint", "countCostChannelPoint"],
+  ["count_cost_channel_point", "countCostChannelPoint"],
+  ["channelpointcost", "countCostChannelPoint"],
+  ["channel_point_cost", "countCostChannelPoint"],
+  ["countredeemchannelpoint", "countRedeemChannelPoint"],
+  ["count_redeem_channel_point", "countRedeemChannelPoint"],
+  ["redeemchannelpoint", "countRedeemChannelPoint"],
+  ["redeem_channel_point", "countRedeemChannelPoint"],
+  ["apicaller", "apicaller"],
+  ["api_caller", "apicaller"],
+]);
+
 interface CreateAchievementRequest {
   title: string;
   description: string;
@@ -131,15 +151,16 @@ function readNonNegativeInteger(value: unknown, fieldName: string): number {
 }
 
 function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
-  const normalizedValue = value
-    .trim()
-    .toLowerCase()
-    .split(/[\s-]+/g)
-    .join("_");
+  const trimmedValue = value.trim();
 
-  if (
-    !supportedTriggerLabels.includes(normalizedValue as SupportedTriggerLabel)
-  ) {
+  if (supportedTriggerLabels.includes(trimmedValue as SupportedTriggerLabel)) {
+    return trimmedValue as SupportedTriggerLabel;
+  }
+
+  const normalizedValue = trimmedValue.toLowerCase().replace(/[\s-]+/g, "_");
+  const aliasedValue = triggerLabelAliases.get(normalizedValue);
+
+  if (!aliasedValue) {
     throw new ApplicationError(
       400,
       "validation_error",
@@ -147,18 +168,18 @@ function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
     );
   }
 
-  return normalizedValue as SupportedTriggerLabel;
+  return aliasedValue;
 }
 
 function normalizeTypeData(
   label: SupportedTriggerLabel,
   value: unknown,
 ): string | null {
-  if (label === "message") {
+  if (label === "countMessage") {
     return null;
   }
 
-  if (label === "channel_point_cost") {
+  if (label === "countCostChannelPoint") {
     if (
       (!Number.isInteger(value) || Number(value) <= 0) &&
       typeof value !== "string"
@@ -166,7 +187,7 @@ function normalizeTypeData(
       throw new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       );
     }
 
@@ -176,7 +197,7 @@ function normalizeTypeData(
       throw new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       );
     }
 
@@ -335,10 +356,10 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
       (body["label"] ?? body["Achievement_Label"]) === undefined
         ? ""
         : readRequiredString(
-          body["label"] ?? body["Achievement_Label"],
-          "label",
-          true,
-        ),
+            body["label"] ?? body["Achievement_Label"],
+            "label",
+            true,
+          ),
     public: readBoolean(body["public"] ?? body["Achievement_Public"], "public"),
     downloads: readOptionalNumber(
       body["downloads"] ?? body["Achievement_Downloads"],
@@ -352,20 +373,20 @@ function mapDbAchievementToResponse(body: unknown): Achievement {
     secret: readBoolean(body["secret"] ?? body["Achievement_Secret"], "secret"),
     image:
       (body["image"] ?? body["Achievement_Image"]) === undefined ||
-        (body["image"] ?? body["Achievement_Image"]) === null
+      (body["image"] ?? body["Achievement_Image"]) === null
         ? null
         : readRequiredString(
-          body["image"] ?? body["Achievement_Image"],
-          "image",
-        ),
+            body["image"] ?? body["Achievement_Image"],
+            "image",
+          ),
     channelId:
       (body["channelId"] ?? body["Chanel_ID"]) === undefined ||
-        (body["channelId"] ?? body["Chanel_ID"]) === null
+      (body["channelId"] ?? body["Chanel_ID"]) === null
         ? null
         : readRequiredString(
-          body["channelId"] ?? body["Chanel_ID"],
-          "channelId",
-        ),
+            body["channelId"] ?? body["Chanel_ID"],
+            "channelId",
+          ),
     type: parseDbType(body),
   };
 }

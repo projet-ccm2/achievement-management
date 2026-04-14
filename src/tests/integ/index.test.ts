@@ -172,7 +172,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -189,7 +189,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "Message Content",
+            label: "Content Message",
             data: "hello world",
           },
         });
@@ -207,7 +207,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -226,7 +226,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -245,7 +245,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
           },
         });
 
@@ -274,7 +274,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -307,7 +307,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -332,7 +332,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -356,7 +356,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -417,7 +417,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       });
@@ -434,7 +434,7 @@ describe("Express App", () => {
           secret: false,
           image: null,
           type: {
-            label: "message-content",
+            label: "Content Message",
             data: "updated",
           },
         });
@@ -451,7 +451,7 @@ describe("Express App", () => {
         secret: false,
         image: null,
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       });
@@ -470,7 +470,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message_content",
+            label: "contentMessage",
             data: "",
           },
         });
@@ -499,7 +499,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -531,7 +531,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -562,7 +562,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -586,7 +586,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -645,7 +645,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -671,7 +671,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -732,7 +732,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -758,7 +758,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -819,7 +819,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -843,7 +843,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -882,7 +882,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -910,7 +910,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -947,7 +947,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -973,7 +973,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -1008,7 +1008,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1039,7 +1039,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1079,7 +1079,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1115,7 +1115,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {

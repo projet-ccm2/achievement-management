@@ -27,7 +27,7 @@ describe("achievementService", () => {
     image: null,
     channelId: "channel-1",
     type: {
-      label: "message" as const,
+      label: "countMessage" as const,
       data: null,
     },
   };
@@ -49,7 +49,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -96,7 +96,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -145,7 +145,7 @@ describe("achievementService", () => {
         image: null,
         channelId: null,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -190,7 +190,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -242,7 +242,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     };
@@ -283,7 +283,7 @@ describe("achievementService", () => {
         secret: false,
         image: null,
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       }),
@@ -316,7 +316,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       }),
@@ -338,7 +338,7 @@ describe("achievementService", () => {
         secret: false,
         image: null,
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       },
@@ -359,7 +359,7 @@ describe("achievementService", () => {
       secret: false,
       image: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -395,7 +395,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       }),
@@ -418,7 +418,7 @@ describe("achievementService", () => {
           secret: false,
           image: null,
           type: {
-            label: "message_content",
+            label: "contentMessage",
             data: "updated",
           },
         },
@@ -454,7 +454,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -508,7 +508,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -558,7 +558,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -605,7 +605,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -660,7 +660,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -712,7 +712,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -760,7 +760,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -812,7 +812,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -862,7 +862,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -911,7 +911,7 @@ describe("achievementService", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -961,7 +961,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -1002,7 +1002,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -1057,7 +1057,7 @@ describe("achievementService", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -1100,7 +1100,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -1154,7 +1154,7 @@ describe("achievementService", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -1190,7 +1190,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
         userState: {
@@ -1251,7 +1251,7 @@ describe("achievementService", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1296,7 +1296,7 @@ describe("achievementService", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
         userState: {
@@ -1357,7 +1357,7 @@ describe("achievementService", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1401,7 +1401,7 @@ describe("achievementService", () => {
       active: true,
       secret: false,
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     };
@@ -1432,7 +1432,7 @@ describe("achievementService", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),

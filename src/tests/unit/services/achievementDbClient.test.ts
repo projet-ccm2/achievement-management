@@ -71,7 +71,7 @@ function buildDbAchievementResponse(overrides: Record<string, unknown> = {}): {
     channelId: "channel-1",
     typeAchievement: {
       id: "type-1",
-      label: "message",
+      label: "countMessage",
       data: "",
     },
     ...overrides,
@@ -105,7 +105,7 @@ describe("achievementDbClient", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -140,7 +140,7 @@ describe("achievementDbClient", () => {
           secret: false,
           image: null,
           type: {
-            label: "message_content",
+            label: "contentMessage",
             data: "updated",
           },
         },
@@ -165,7 +165,7 @@ describe("achievementDbClient", () => {
       .mockResolvedValueOnce(
         mockJsonResponse({
           id: "type-1",
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         }),
       )
@@ -184,7 +184,7 @@ describe("achievementDbClient", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -195,7 +195,7 @@ describe("achievementDbClient", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         }),
       }),
@@ -228,7 +228,7 @@ describe("achievementDbClient", () => {
       .mockResolvedValueOnce(
         mockJsonResponse({
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         }),
       )
@@ -248,7 +248,7 @@ describe("achievementDbClient", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -258,7 +258,7 @@ describe("achievementDbClient", () => {
       "http://db-service.test/type-achievements",
       expect.objectContaining({
         body: JSON.stringify({
-          label: "message",
+          label: "countMessage",
           data: "",
         }),
       }),
@@ -287,7 +287,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -320,7 +320,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -357,7 +357,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -393,7 +393,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -426,7 +426,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -460,7 +460,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -494,7 +494,7 @@ describe("achievementDbClient", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -513,7 +513,7 @@ describe("achievementDbClient", () => {
       .mockResolvedValueOnce(
         mockJsonResponse({
           id: "type-2",
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         }),
       )
@@ -523,7 +523,7 @@ describe("achievementDbClient", () => {
             title: "Updated",
             typeAchievement: {
               id: "type-2",
-              label: "message_content",
+              label: "contentMessage",
               data: "updated",
             },
           }),
@@ -542,7 +542,7 @@ describe("achievementDbClient", () => {
       secret: false,
       image: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -574,7 +574,7 @@ describe("achievementDbClient", () => {
       .mockResolvedValueOnce(
         mockJsonResponse({
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         }),
       )
@@ -596,7 +596,7 @@ describe("achievementDbClient", () => {
         secret: false,
         image: null,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),

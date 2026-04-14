@@ -31,7 +31,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -53,7 +53,7 @@ describe("achievementController", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -74,7 +74,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -107,7 +107,7 @@ describe("achievementController", () => {
       active: true,
       secret: false,
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -151,7 +151,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -176,7 +176,7 @@ describe("achievementController", () => {
           secret: false,
           image: null,
           type: {
-            label: "message-content",
+            label: "Content Message",
             data: "updated",
           },
         },
@@ -196,7 +196,7 @@ describe("achievementController", () => {
       secret: false,
       image: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -219,7 +219,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -264,7 +264,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -310,7 +310,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -356,7 +356,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -402,7 +402,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -453,7 +453,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -495,7 +495,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
         userState: {
