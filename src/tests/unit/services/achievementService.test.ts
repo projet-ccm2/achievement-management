@@ -25,6 +25,7 @@ describe("achievementService", () => {
     active: true,
     secret: false,
     image: null,
+    imageUpload: null,
     channelId: "channel-1",
     type: {
       label: "countMessage" as const,
@@ -63,11 +64,15 @@ describe("achievementService", () => {
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
     };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
     };
 
     const achievement = await createAchievementWithDependencies(payload, {
+      bucketClient,
       dbClient,
       notificationClient,
     });
@@ -110,12 +115,16 @@ describe("achievementService", () => {
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
     };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockRejectedValue(new Error("boom")),
     };
 
     await expect(
       createAchievementWithDependencies(payload, {
+        bucketClient,
         dbClient,
         notificationClient,
       }),
@@ -159,11 +168,15 @@ describe("achievementService", () => {
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
     };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
     const notificationClient = {
       invalidateChannelCache: jest.fn(),
     };
 
     const achievement = await createAchievementWithDependencies(payload, {
+      bucketClient,
       dbClient,
       notificationClient,
     });
@@ -209,6 +222,11 @@ describe("achievementService", () => {
         updateAchievement: jest.fn(),
       },
     }));
+    jest.doMock("../../../services/achievementBucketClient", () => ({
+      bucketAchievementClient: {
+        uploadAchievementImage: jest.fn(),
+      },
+    }));
     jest.doMock("../../../services/notificationCacheClient", () => ({
       notificationCacheClient: {
         invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
@@ -222,6 +240,81 @@ describe("achievementService", () => {
     await expect(createAchievement(payload)).resolves.toEqual(
       createdAchievement,
     );
+  });
+
+  it("should upload the image before persisting a new achievement", async () => {
+    const dbClient = {
+      createAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: "assets/image/achievement/channel-1.png",
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+    };
+    const bucketClient = {
+      uploadAchievementImage: jest
+        .fn()
+        .mockResolvedValue("assets/image/achievement/channel-1.png"),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await createAchievementWithDependencies(
+      {
+        ...payload,
+        imageUpload: {
+          fileName: "achievement.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+      },
+      {
+        bucketClient,
+        dbClient,
+        notificationClient,
+      },
+    );
+
+    expect(bucketClient.uploadAchievementImage).toHaveBeenCalledWith(
+      {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+      undefined,
+    );
+    expect(dbClient.createAchievement).toHaveBeenCalledWith({
+      ...payload,
+      image: "assets/image/achievement/channel-1.png",
+      imageUpload: {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+    });
   });
 
   it("should use the default dependencies in updateAchievement", async () => {
@@ -261,6 +354,11 @@ describe("achievementService", () => {
         updateAchievement: jest.fn().mockResolvedValue(updatedAchievement),
       },
     }));
+    jest.doMock("../../../services/achievementBucketClient", () => ({
+      bucketAchievementClient: {
+        uploadAchievementImage: jest.fn(),
+      },
+    }));
     jest.doMock("../../../services/notificationCacheClient", () => ({
       notificationCacheClient: {
         invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
@@ -282,6 +380,7 @@ describe("achievementService", () => {
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         type: {
           label: "contentMessage",
           data: "updated",
@@ -321,6 +420,9 @@ describe("achievementService", () => {
         },
       }),
     };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
     };
@@ -337,12 +439,14 @@ describe("achievementService", () => {
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         type: {
           label: "contentMessage",
           data: "updated",
         },
       },
       {
+        bucketClient,
         dbClient,
         notificationClient,
       },
@@ -358,6 +462,7 @@ describe("achievementService", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       type: {
         label: "contentMessage",
         data: "updated",
@@ -367,6 +472,105 @@ describe("achievementService", () => {
       "channel-1",
     );
     expect(achievement.title).toBe("Updated");
+  });
+
+  it("should upload the image before updating an achievement", async () => {
+    const dbClient = {
+      createAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+      updateAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "Updated",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: "assets/image/achievement/achievement-1.png",
+        channelId: "channel-1",
+        type: {
+          label: "contentMessage",
+          data: "updated",
+        },
+      }),
+    };
+    const bucketClient = {
+      uploadAchievementImage: jest
+        .fn()
+        .mockResolvedValue("assets/image/achievement/achievement-1.png"),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await updateAchievementWithDependencies(
+      "achievement-1",
+      {
+        title: "Updated",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        active: true,
+        secret: false,
+        image: null,
+        imageUpload: {
+          fileName: "achievement.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+        type: {
+          label: "contentMessage",
+          data: "updated",
+        },
+      },
+      {
+        bucketClient,
+        dbClient,
+        notificationClient,
+      },
+    );
+
+    expect(bucketClient.uploadAchievementImage).toHaveBeenCalledWith(
+      {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+      "achievement-1",
+    );
+    expect(dbClient.updateAchievement).toHaveBeenCalledWith("achievement-1", {
+      title: "Updated",
+      description: "Desc",
+      goal: 2,
+      reward: 10,
+      label: "",
+      public: false,
+      active: true,
+      secret: false,
+      image: "assets/image/achievement/achievement-1.png",
+      imageUpload: {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+      type: {
+        label: "contentMessage",
+        data: "updated",
+      },
+    });
   });
 
   it("should surface notification invalidation failures after update", async () => {
@@ -400,6 +604,9 @@ describe("achievementService", () => {
         },
       }),
     };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
     const notificationClient = {
       invalidateChannelCache: jest.fn().mockRejectedValue(new Error("boom")),
     };
@@ -417,12 +624,14 @@ describe("achievementService", () => {
           active: true,
           secret: false,
           image: null,
+          imageUpload: null,
           type: {
             label: "contentMessage",
             data: "updated",
           },
         },
         {
+          bucketClient,
           dbClient,
           notificationClient,
         },

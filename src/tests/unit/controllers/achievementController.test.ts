@@ -72,6 +72,7 @@ describe("achievementController", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       channelId: "channel-1",
       type: {
         label: "countMessage",
@@ -195,6 +196,7 @@ describe("achievementController", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       type: {
         label: "contentMessage",
         data: "updated",

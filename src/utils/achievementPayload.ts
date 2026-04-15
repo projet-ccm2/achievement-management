@@ -45,6 +45,7 @@ interface CreateAchievementRequest {
   active: boolean;
   secret: boolean;
   image: string | null;
+  imageUpload?: AchievementImageUpload | null;
   channelId: string;
   type: {
     label: SupportedTriggerLabel;
@@ -62,10 +63,17 @@ interface UpdateAchievementRequest {
   active: boolean;
   secret: boolean;
   image: string | null;
+  imageUpload?: AchievementImageUpload | null;
   type: {
     label: SupportedTriggerLabel;
     data: string | null;
   };
+}
+
+interface AchievementImageUpload {
+  fileName: string;
+  mimeType: string;
+  contentBase64: string;
 }
 
 interface AiSuggestionRequest {
@@ -112,6 +120,29 @@ function readOptionalImage(value: unknown): string | null {
   }
 
   return readRequiredString(value, "image");
+}
+
+function readImageUpload(value: unknown): AchievementImageUpload | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!isRecord(value)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "imageUpload must be an object",
+    );
+  }
+
+  return {
+    fileName: readRequiredString(value.fileName, "imageUpload.fileName"),
+    mimeType: readRequiredString(value.mimeType, "imageUpload.mimeType"),
+    contentBase64: readRequiredString(
+      value.contentBase64,
+      "imageUpload.contentBase64",
+    ),
+  };
 }
 
 function readBoolean(value: unknown, fieldName: string): boolean {
@@ -265,6 +296,8 @@ function parseAchievementDefinitionPayload(
     readRequiredString(body.type.label, "type.label"),
   );
 
+  const imageUpload = readImageUpload(body.imageUpload);
+
   return {
     title: readRequiredString(body.title, "title"),
     description: readRequiredString(body.description, "description"),
@@ -278,6 +311,7 @@ function parseAchievementDefinitionPayload(
     active: readBoolean(body.active, "active"),
     secret: readBoolean(body.secret, "secret"),
     image: readOptionalImage(body.image),
+    imageUpload,
     type: {
       label: triggerLabel,
       data: normalizeTypeData(triggerLabel, body.type.data),
@@ -522,6 +556,7 @@ export type {
   AiSuggestionRequest,
   AiSuggestionResponse,
   CreateAchievementRequest,
+  AchievementImageUpload,
   CreateAchievementResponse,
   UpdateAchievementRequest,
   UpdateAchievementResponse,

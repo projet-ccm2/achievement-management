@@ -18,6 +18,7 @@ describe("Environment Configuration", () => {
       delete process.env.ALLOWED_ORIGINS;
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       const { config } = require("../../../config/environment");
@@ -26,6 +27,7 @@ describe("Environment Configuration", () => {
       expect(config.nodeEnv).toBe("development");
       expect(config.dbServiceUrl).toBe("http://db-service.test");
       expect(config.aiServiceUrl).toBe("http://ai-service.test");
+      expect(config.bucketManagerUrl).toBe("http://bucket-manager.test");
       expect(config.notificationHandlerUrl).toBe(
         "http://notification-handler.test",
       );
@@ -43,6 +45,7 @@ describe("Environment Configuration", () => {
       process.env.ALLOWED_ORIGINS = "https://example.com,https://test.com";
       process.env.DB_SERVICE_URL = "http://db.internal";
       process.env.IA_SERVICE_URL = "http://ai.internal";
+      process.env.BUCKET_MANAGER_URL = "http://bucket.internal";
       process.env.NOTIFICATION_HANDLER_URL = "http://notify.internal";
 
       const { config } = require("../../../config/environment");
@@ -51,6 +54,7 @@ describe("Environment Configuration", () => {
       expect(config.nodeEnv).toBe("production");
       expect(config.dbServiceUrl).toBe("http://db.internal");
       expect(config.aiServiceUrl).toBe("http://ai.internal");
+      expect(config.bucketManagerUrl).toBe("http://bucket.internal");
       expect(config.notificationHandlerUrl).toBe("http://notify.internal");
       expect(config.cors.allowedOrigins).toEqual([
         "https://example.com",
@@ -62,6 +66,7 @@ describe("Environment Configuration", () => {
       process.env.PORT = "9999";
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       const { config } = require("../../../config/environment");
@@ -74,6 +79,7 @@ describe("Environment Configuration", () => {
       process.env.ALLOWED_ORIGINS = "";
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       const { config } = require("../../../config/environment");
@@ -90,6 +96,7 @@ describe("Environment Configuration", () => {
       process.env.ALLOWED_ORIGINS = "https://single-origin.com";
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       const { config } = require("../../../config/environment");
@@ -101,6 +108,7 @@ describe("Environment Configuration", () => {
       process.env.FRONT_URL = "https://front-url.com";
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       const { config } = require("../../../config/environment");
@@ -111,6 +119,7 @@ describe("Environment Configuration", () => {
     it("should fail clearly when a required service URL is missing", () => {
       delete process.env.DB_SERVICE_URL;
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       expect(() => {
@@ -121,6 +130,7 @@ describe("Environment Configuration", () => {
     it("should fail clearly when a required service URL is invalid", () => {
       process.env.DB_SERVICE_URL = "not-a-url";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       expect(() => {
@@ -132,6 +142,7 @@ describe("Environment Configuration", () => {
       process.env.PORT = "0";
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       expect(() => {
@@ -144,6 +155,7 @@ describe("Environment Configuration", () => {
       delete process.env.ALLOWED_ORIGINS;
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
+      process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
       process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
 
       expect(() => {
@@ -160,6 +172,7 @@ describe("Environment Configuration", () => {
       expect(config).toHaveProperty("nodeEnv");
       expect(config).toHaveProperty("dbServiceUrl");
       expect(config).toHaveProperty("aiServiceUrl");
+      expect(config).toHaveProperty("bucketManagerUrl");
       expect(config).toHaveProperty("notificationHandlerUrl");
       expect(config).toHaveProperty("cors");
 
@@ -169,8 +182,20 @@ describe("Environment Configuration", () => {
       expect(typeof config.nodeEnv).toBe("string");
       expect(typeof config.dbServiceUrl).toBe("string");
       expect(typeof config.aiServiceUrl).toBe("string");
+      expect(typeof config.bucketManagerUrl).toBe("string");
       expect(typeof config.notificationHandlerUrl).toBe("string");
       expect(Array.isArray(config.cors.allowedOrigins)).toBe(true);
+    });
+
+    it("should fail clearly when BUCKET_MANAGER_URL is missing", () => {
+      process.env.DB_SERVICE_URL = "http://db-service.test";
+      process.env.IA_SERVICE_URL = "http://ai-service.test";
+      delete process.env.BUCKET_MANAGER_URL;
+      process.env.NOTIFICATION_HANDLER_URL = "http://notification-handler.test";
+
+      expect(() => {
+        require("../../../config/environment");
+      }).toThrow("BUCKET_MANAGER_URL is required");
     });
   });
 });

@@ -51,6 +51,7 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       image: "https://image.test/file.png",
+      imageUpload: null,
       channelId: "channel-1",
       type: {
         label: "countRedeemChannelPoint",
@@ -85,6 +86,7 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       channelId: "channel-1",
       type: {
         label: "countMessage",
@@ -119,9 +121,55 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       type: {
         label: "contentMessage",
         data: "updated",
+      },
+    });
+  });
+
+  it("should parse a valid image upload payload", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        image: null,
+        imageUpload: {
+          fileName: "achievement.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: "",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      imageUpload: {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: null,
       },
     });
   });
@@ -226,6 +274,29 @@ describe("achievementPayload", () => {
         400,
         "validation_error",
         "type.label is not supported",
+      ),
+    );
+    expect(() =>
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        imageUpload: "invalid",
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "imageUpload must be an object",
       ),
     );
   });

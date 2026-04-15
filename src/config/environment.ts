@@ -4,6 +4,7 @@ interface Config {
   nodeEnv: string;
   dbServiceUrl: string;
   aiServiceUrl: string;
+  bucketManagerUrl: string;
   notificationHandlerUrl: string;
   cors: {
     allowedOrigins: string[];
@@ -70,6 +71,7 @@ function validateConfig(): Config {
     nodeEnv: process.env.NODE_ENV || "development",
     dbServiceUrl: readRequiredUrl("DB_SERVICE_URL"),
     aiServiceUrl: readRequiredUrl("IA_SERVICE_URL"),
+    bucketManagerUrl: readRequiredUrl("BUCKET_MANAGER_URL"),
     notificationHandlerUrl: readRequiredUrl("NOTIFICATION_HANDLER_URL"),
     cors: {
       allowedOrigins: readAllowedOrigins(),

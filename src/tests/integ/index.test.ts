@@ -205,6 +205,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         channelId: "channel-1",
         type: {
           label: "contentMessage",
@@ -450,6 +451,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         type: {
           label: "contentMessage",
           data: "updated",

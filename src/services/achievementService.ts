@@ -9,6 +9,10 @@ import {
   AiAchievementClient,
 } from "./achievementAiClient";
 import {
+  bucketAchievementClient,
+  BucketAchievementClient,
+} from "./achievementBucketClient";
+import {
   dbAchievementClient,
   DbAchievementClient,
 } from "./achievementDbClient";
@@ -27,8 +31,26 @@ interface AchievementServiceDependencies {
   notificationClient: NotificationCacheClient;
 }
 
+interface AchievementImageServiceDependencies
+  extends AchievementServiceDependencies {
+  bucketClient: BucketAchievementClient;
+}
+
 interface AchievementAiServiceDependencies {
   aiClient: AiAchievementClient;
+}
+
+async function resolveImageWithDependencies(
+  image: string | null,
+  imageUpload: CreateAchievementRequest["imageUpload"],
+  bucketClient: BucketAchievementClient,
+  imageId?: string,
+): Promise<string | null> {
+  if (!imageUpload) {
+    return image;
+  }
+
+  return bucketClient.uploadAchievementImage(imageUpload, imageId);
 }
 
 async function invalidateChannelCacheIfNeeded(
@@ -49,9 +71,19 @@ async function invalidateChannelCacheIfNeeded(
 
 async function createAchievementWithDependencies(
   payload: CreateAchievementRequest,
-  dependencies: AchievementServiceDependencies,
+  dependencies: AchievementImageServiceDependencies,
 ): Promise<Achievement> {
-  const achievement = await dependencies.dbClient.createAchievement(payload);
+  const payloadWithStoredImage = {
+    ...payload,
+    image: await resolveImageWithDependencies(
+      payload.image,
+      payload.imageUpload,
+      dependencies.bucketClient,
+    ),
+  };
+  const achievement = await dependencies.dbClient.createAchievement(
+    payloadWithStoredImage,
+  );
 
   await invalidateChannelCacheIfNeeded(
     achievement.channelId,
@@ -66,6 +98,7 @@ async function createAchievement(
   payload: CreateAchievementRequest,
 ): Promise<Achievement> {
   return createAchievementWithDependencies(payload, {
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
     notificationClient: notificationCacheClient,
   });
@@ -168,11 +201,20 @@ async function generateAchievementSuggestion(
 async function updateAchievementWithDependencies(
   achievementId: string,
   payload: UpdateAchievementRequest,
-  dependencies: AchievementServiceDependencies,
+  dependencies: AchievementImageServiceDependencies,
 ): Promise<Achievement> {
+  const payloadWithStoredImage = {
+    ...payload,
+    image: await resolveImageWithDependencies(
+      payload.image,
+      payload.imageUpload,
+      dependencies.bucketClient,
+      achievementId,
+    ),
+  };
   const achievement = await dependencies.dbClient.updateAchievement(
     achievementId,
-    payload,
+    payloadWithStoredImage,
   );
 
   await invalidateChannelCacheIfNeeded(
@@ -189,6 +231,7 @@ async function updateAchievement(
   payload: UpdateAchievementRequest,
 ): Promise<Achievement> {
   return updateAchievementWithDependencies(achievementId, payload, {
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
     notificationClient: notificationCacheClient,
   });
