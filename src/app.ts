@@ -21,24 +21,34 @@ const app = express();
 const allowedMethods = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const allowedHeaders = "Content-Type, Authorization";
 
-function isAllowedTwitchExtensionOrigin(origin: string): boolean {
+function resolveAllowedTwitchExtensionOrigin(origin: string): string | null {
   try {
     const parsedOrigin = new URL(origin);
 
-    return (
-      parsedOrigin.protocol === "https:" &&
-      parsedOrigin.hostname.endsWith(".ext-twitch.tv")
-    );
+    if (
+      parsedOrigin.protocol !== "https:" ||
+      parsedOrigin.hostname.endsWith(".ext-twitch.tv") === false ||
+      parsedOrigin.port !== ""
+    ) {
+      return null;
+    }
+
+    return `https://${parsedOrigin.hostname}`;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function isAllowedCorsOrigin(origin: string): boolean {
-  return (
-    config.cors.allowedOrigins.includes(origin) ||
-    isAllowedTwitchExtensionOrigin(origin)
+function resolveAllowedCorsOrigin(origin: string): string | null {
+  const configuredOrigin = config.cors.allowedOrigins.find(
+    (allowedOrigin) => allowedOrigin === origin,
   );
+
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  return resolveAllowedTwitchExtensionOrigin(origin);
 }
 
 app.disable("x-powered-by");
@@ -48,8 +58,10 @@ app.use((req, res, next) => {
 
   res.setHeader("Vary", "Origin");
 
-  if (origin && isAllowedCorsOrigin(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  const allowedOrigin = origin ? resolveAllowedCorsOrigin(origin) : null;
+
+  if (allowedOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
     res.setHeader("Access-Control-Allow-Methods", allowedMethods);
     res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
     res.setHeader("Access-Control-Allow-Credentials", "true");
