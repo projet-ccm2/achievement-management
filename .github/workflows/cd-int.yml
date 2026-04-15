@@ -28,7 +28,7 @@ jobs:
       environment: integration
       cloud-run-service-name: achievement-management-int
       service_type: "back_prive"
-      required_env_vars: "INT_DB_SERVICE_URL,INT_IA_SERVICE_URL,INT_BUCKET_MANAGER_URL,INT_NOTIFICATION_HANDLER_URL,INT_ALLOWED_ORIGINS,INT_FRONT_URL"
+      required_env_vars: "INT_DB_SERVICE_URL,INT_IA_SERVICE_URL,INT_BUCKET_MANAGER_URL,INT_NOTIFICATION_HANDLER_URL,INT_ALLOWED_ORIGINS,INT_FRONT_URL,INT_TWITCH_EXTENSION_IDS"
     secrets:
       GCP_SA_KEY: ${{ secrets.INT_GCP_SA_KEY }}
       GCP_PROJECT_ID: ${{ secrets.INT_GCP_PROJECT_ID }}
@@ -38,4 +38,5 @@ jobs:
       NOTIFICATION_HANDLER_URL: ${{ secrets.INT_NOTIFICATION_HANDLER_URL }}
       ALLOWED_ORIGINS: ${{ secrets.INT_ALLOWED_ORIGINS }}
       FRONT_URL: ${{ secrets.INT_FRONT_URL }}
+      TWITCH_EXTENSION_IDS: ${{ secrets.INT_TWITCH_EXTENSION_IDS }}
       TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}

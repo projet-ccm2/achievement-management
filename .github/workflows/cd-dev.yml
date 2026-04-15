@@ -28,7 +28,7 @@ jobs:
       environment: development
       cloud-run-service-name: achievement-management-dev
       service_type: "back_prive"
-      required_env_vars: "DEV_DB_SERVICE_URL,DEV_IA_SERVICE_URL,DEV_BUCKET_MANAGER_URL,DEV_NOTIFICATION_HANDLER_URL,DEV_ALLOWED_ORIGINS,DEV_FRONT_URL"
+      required_env_vars: "DEV_DB_SERVICE_URL,DEV_IA_SERVICE_URL,DEV_BUCKET_MANAGER_URL,DEV_NOTIFICATION_HANDLER_URL,DEV_ALLOWED_ORIGINS,DEV_FRONT_URL,DEV_TWITCH_EXTENSION_IDS"
     secrets:
       GCP_SA_KEY: ${{ secrets.DEV_GCP_SA_KEY }}
       GCP_PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
@@ -38,4 +38,5 @@ jobs:
       NOTIFICATION_HANDLER_URL: ${{ secrets.DEV_NOTIFICATION_HANDLER_URL }}
       ALLOWED_ORIGINS: ${{ secrets.DEV_ALLOWED_ORIGINS }}
       FRONT_URL: ${{ secrets.DEV_FRONT_URL }}
+      TWITCH_EXTENSION_IDS: ${{ secrets.DEV_TWITCH_EXTENSION_IDS }}
       TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}

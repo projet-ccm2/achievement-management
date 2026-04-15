@@ -19,24 +19,6 @@ import { config } from "./config/environment";
 const app = express();
 const allowedMethods = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const allowedHeaders = "Content-Type, Authorization";
-const twitchExtensionOriginPattern =
-  /^https:\/\/([a-z0-9-]+)\.ext-twitch\.tv$/i;
-
-function resolveAllowedTwitchExtensionOrigin(origin: string): string | null {
-  const match = twitchExtensionOriginPattern.exec(origin);
-
-  if (!match) {
-    return null;
-  }
-
-  const extensionId = match[1]?.toLowerCase();
-
-  if (!extensionId) {
-    return null;
-  }
-
-  return `https://${extensionId}.ext-twitch.tv`;
-}
 
 function resolveAllowedCorsOrigin(origin: string): string | null {
   const configuredOrigin = config.cors.allowedOrigins.find(
@@ -47,7 +29,11 @@ function resolveAllowedCorsOrigin(origin: string): string | null {
     return configuredOrigin;
   }
 
-  return resolveAllowedTwitchExtensionOrigin(origin);
+  return (
+    config.cors.twitchExtensionOrigins.find(
+      (allowedOrigin) => allowedOrigin === origin,
+    ) ?? null
+  );
 }
 
 app.disable("x-powered-by");

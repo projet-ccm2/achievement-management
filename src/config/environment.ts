@@ -8,6 +8,7 @@ interface Config {
   notificationHandlerUrl: string;
   cors: {
     allowedOrigins: string[];
+    twitchExtensionOrigins: string[];
   };
 }
 
@@ -65,6 +66,17 @@ function readAllowedOrigins(): string[] {
   return origins;
 }
 
+function readTwitchExtensionOrigins(): string[] {
+  if (!process.env.TWITCH_EXTENSION_IDS) {
+    return [];
+  }
+
+  return process.env.TWITCH_EXTENSION_IDS.split(",")
+    .map((extensionId) => extensionId.trim().toLowerCase())
+    .filter((extensionId) => /^[a-z0-9-]+$/.test(extensionId))
+    .map((extensionId) => `https://${extensionId}.ext-twitch.tv`);
+}
+
 function validateConfig(): Config {
   return {
     port: readPort(),
@@ -75,6 +87,7 @@ function validateConfig(): Config {
     notificationHandlerUrl: readRequiredUrl("NOTIFICATION_HANDLER_URL"),
     cors: {
       allowedOrigins: readAllowedOrigins(),
+      twitchExtensionOrigins: readTwitchExtensionOrigins(),
     },
   };
 }

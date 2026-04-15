@@ -16,6 +16,7 @@ describe("Environment Configuration", () => {
       delete process.env.PORT;
       delete process.env.NODE_ENV;
       delete process.env.ALLOWED_ORIGINS;
+      delete process.env.TWITCH_EXTENSION_IDS;
       process.env.DB_SERVICE_URL = "http://db-service.test";
       process.env.IA_SERVICE_URL = "http://ai-service.test";
       process.env.BUCKET_MANAGER_URL = "http://bucket-manager.test";
@@ -37,6 +38,7 @@ describe("Environment Configuration", () => {
         "http://localhost:8080",
         "null",
       ]);
+      expect(config.cors.twitchExtensionOrigins).toEqual([]);
     });
 
     it("should use provided environment variables", () => {
@@ -47,6 +49,7 @@ describe("Environment Configuration", () => {
       process.env.IA_SERVICE_URL = "http://ai.internal";
       process.env.BUCKET_MANAGER_URL = "http://bucket.internal";
       process.env.NOTIFICATION_HANDLER_URL = "http://notify.internal";
+      process.env.TWITCH_EXTENSION_IDS = "abc123,def456";
 
       const { config } = require("../../../config/environment");
 
@@ -59,6 +62,10 @@ describe("Environment Configuration", () => {
       expect(config.cors.allowedOrigins).toEqual([
         "https://example.com",
         "https://test.com",
+      ]);
+      expect(config.cors.twitchExtensionOrigins).toEqual([
+        "https://abc123.ext-twitch.tv",
+        "https://def456.ext-twitch.tv",
       ]);
     });
 
@@ -177,6 +184,7 @@ describe("Environment Configuration", () => {
       expect(config).toHaveProperty("cors");
 
       expect(config.cors).toHaveProperty("allowedOrigins");
+      expect(config.cors).toHaveProperty("twitchExtensionOrigins");
 
       expect(typeof config.port).toBe("number");
       expect(typeof config.nodeEnv).toBe("string");
@@ -185,6 +193,7 @@ describe("Environment Configuration", () => {
       expect(typeof config.bucketManagerUrl).toBe("string");
       expect(typeof config.notificationHandlerUrl).toBe("string");
       expect(Array.isArray(config.cors.allowedOrigins)).toBe(true);
+      expect(Array.isArray(config.cors.twitchExtensionOrigins)).toBe(true);
     });
 
     it("should fail clearly when BUCKET_MANAGER_URL is missing", () => {
