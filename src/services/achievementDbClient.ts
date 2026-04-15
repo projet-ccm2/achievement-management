@@ -1,10 +1,16 @@
-/* global Response */
+/* global Response, URLSearchParams */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement, UserAchievement } from "../models/achievement";
+import {
+  Achievement,
+  AchievementLeaderboardEntry,
+  UserAchievement,
+} from "../models/achievement";
 import { logger } from "../utils/logger";
 import {
+  AchievementLeaderboardQuery,
   CreateAchievementRequest,
+  mapDbAchievementLeaderboardResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
   mapDbUserAchievementsToResponse,
@@ -17,6 +23,9 @@ type DbAchievementClient = {
   getAchievementById: (...args: [string]) => Promise<Achievement>;
   getAchievementsByChannelId: (...args: [string]) => Promise<Achievement[]>;
   getPublicAchievements: () => Promise<Achievement[]>;
+  getAchievementLeaderboardByChannelId: (
+    ...args: [string, AchievementLeaderboardQuery]
+  ) => Promise<AchievementLeaderboardEntry[]>;
   getAchievementsByUserId: (...args: [string]) => Promise<UserAchievement[]>;
   getAchievementsByUserIdAndChannelId: (
     ...args: [string, string]
@@ -37,7 +46,8 @@ function buildDbPayload(
   payload: CreateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
-  const normalizedLabel = payload.label === "" ? " " : payload.label;
+  const normalizedLabel =
+    payload.label.trim().length === 0 ? " " : payload.label;
 
   return {
     title: payload.title,
@@ -58,7 +68,8 @@ function buildDbUpdatePayload(
   payload: UpdateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
-  const normalizedLabel = payload.label === "" ? " " : payload.label;
+  const normalizedLabel =
+    payload.label.trim().length === 0 ? " " : payload.label;
 
   return {
     title: payload.title,
@@ -284,6 +295,38 @@ class HttpDbAchievementClient implements DbAchievementClient {
           "DB service request timed out while getting the achievement",
       },
       mapDbAchievementsToResponse,
+    );
+  }
+
+  public async getAchievementLeaderboardByChannelId(
+    channelId: string,
+    query: AchievementLeaderboardQuery,
+  ): Promise<AchievementLeaderboardEntry[]> {
+    const searchParams = new URLSearchParams();
+
+    if (query.limit !== undefined) {
+      searchParams.set("limit", String(query.limit));
+    }
+
+    if (query.sort) {
+      searchParams.set("sort", query.sort);
+    }
+
+    const querySuffix =
+      searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/channel/${encodeURIComponent(channelId)}/leaderboard${querySuffix}`,
+        method: "GET",
+        operation: "get",
+        logOperation: "getAchievementLeaderboardByChannelId",
+        networkErrorMessage:
+          "DB service could not get the achievement leaderboard",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement leaderboard",
+      },
+      mapDbAchievementLeaderboardResponse,
     );
   }
 

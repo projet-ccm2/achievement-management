@@ -8,6 +8,7 @@ import {
   deactivateAchievement,
   deleteAchievement,
   generateAchievementSuggestion,
+  getAchievementLeaderboardByChannelId,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserIdAndChannelId,
@@ -32,6 +33,7 @@ jest.mock("../../services/achievementService", () => ({
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
   generateAchievementSuggestion: jest.fn(),
+  getAchievementLeaderboardByChannelId: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
   getAchievementsByUserIdAndChannelId: jest.fn(),
@@ -54,6 +56,10 @@ describe("Express App", () => {
   const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
     typeof getAchievementById
   >;
+  const getAchievementLeaderboardByChannelIdMock =
+    getAchievementLeaderboardByChannelId as jest.MockedFunction<
+      typeof getAchievementLeaderboardByChannelId
+    >;
   const getAchievementsByChannelIdMock =
     getAchievementsByChannelId as jest.MockedFunction<
       typeof getAchievementsByChannelId
@@ -969,6 +975,53 @@ describe("Express App", () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /achievements/channel/:channelId/leaderboard", () => {
+    it("should return the achievement leaderboard by channel", async () => {
+      getAchievementLeaderboardByChannelIdMock.mockResolvedValue([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]);
+
+      const response = await request(app).get(
+        "/achievements/channel/channel-1/leaderboard?limit=5&sort=completed",
+      );
+
+      expect(response.status).toBe(200);
+      expect(getAchievementLeaderboardByChannelIdMock).toHaveBeenCalledWith(
+        "channel-1",
+        {
+          limit: 5,
+          sort: "completed",
+        },
+      );
+      expect(response.body).toEqual([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]);
+    });
+
+    it("should reject an invalid leaderboard query", async () => {
+      const response = await request(app).get(
+        "/achievements/channel/channel-1/leaderboard?limit=0&sort=invalid",
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "limit must be a positive integer",
+      });
+      expect(getAchievementLeaderboardByChannelIdMock).not.toHaveBeenCalled();
     });
   });
 

@@ -126,6 +126,42 @@ describe("achievementDbClient", () => {
     });
   });
 
+  it("should force a single space label in the DB payload when the label only contains whitespace", () => {
+    expect(
+      buildDbPayload(
+        {
+          title: "First",
+          description: "Desc",
+          goal: 1,
+          reward: 0,
+          label: "   ",
+          public: true,
+          active: true,
+          secret: false,
+          image: null,
+          channelId: "channel-1",
+          type: {
+            label: "countMessage",
+            data: null,
+          },
+        },
+        "type-1",
+      ),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      label: " ",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      typeId: "type-1",
+    });
+  });
+
   it("should build the DB update payload without channelId", () => {
     expect(
       buildDbUpdatePayload(
@@ -746,6 +782,63 @@ describe("achievementDbClient", () => {
     expect(achievements).toHaveLength(1);
     expect(achievements[0]?.public).toBe(true);
     expect(achievements[0]?.channelId).toBeNull();
+  });
+
+  it("should get the achievement leaderboard by channel through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]),
+    );
+
+    const client = new HttpDbAchievementClient();
+    const leaderboard = await client.getAchievementLeaderboardByChannelId(
+      "channel-1",
+      {
+        limit: 5,
+        sort: "completed",
+      },
+    );
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/achievements/channel/channel-1/leaderboard?limit=5&sort=completed",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+    expect(leaderboard).toEqual([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
+      },
+    ]);
+  });
+
+  it("should reject invalid achievement leaderboard payloads", async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      mockJsonResponse({
+        invalid: true,
+      }),
+    );
+
+    const client = new HttpDbAchievementClient();
+
+    await expect(
+      client.getAchievementLeaderboardByChannelId("channel-1", {}),
+    ).rejects.toEqual(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement leaderboard payload",
+      ),
+    );
   });
 
   it("should get achievements by user through the DB service", async () => {

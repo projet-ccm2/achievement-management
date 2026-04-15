@@ -1,6 +1,7 @@
 import { ApplicationError } from "../middlewares/errorHandler";
 import {
   Achievement,
+  AchievementLeaderboardEntry,
   AchievementSuggestion,
   UserAchievement,
 } from "../models/achievement";
@@ -21,6 +22,7 @@ import {
   NotificationCacheClient,
 } from "./notificationCacheClient";
 import {
+  AchievementLeaderboardQuery,
   AiSuggestionRequest,
   CreateAchievementRequest,
   UpdateAchievementRequest,
@@ -40,6 +42,9 @@ interface AchievementAiServiceDependencies {
   aiClient: AiAchievementClient;
 }
 
+const defaultAchievementImagePlaceholder =
+  "https://placehold.co/512x512/png?text=Achievement";
+
 async function resolveImageWithDependencies(
   image: string | null,
   imageUpload: CreateAchievementRequest["imageUpload"],
@@ -51,6 +56,20 @@ async function resolveImageWithDependencies(
   }
 
   return bucketClient.uploadAchievementImage(imageUpload, imageId);
+}
+
+async function resolveCreateImageWithDependencies(
+  image: string | null,
+  imageUpload: CreateAchievementRequest["imageUpload"],
+  bucketClient: BucketAchievementClient,
+): Promise<string> {
+  const resolvedImage = await resolveImageWithDependencies(
+    image,
+    imageUpload,
+    bucketClient,
+  );
+
+  return resolvedImage ?? defaultAchievementImagePlaceholder;
 }
 
 async function invalidateChannelCacheIfNeeded(
@@ -75,7 +94,7 @@ async function createAchievementWithDependencies(
 ): Promise<Achievement> {
   const payloadWithStoredImage = {
     ...payload,
-    image: await resolveImageWithDependencies(
+    image: await resolveCreateImageWithDependencies(
       payload.image,
       payload.imageUpload,
       dependencies.bucketClient,
@@ -142,6 +161,30 @@ async function getPublicAchievements(): Promise<Achievement[]> {
   return getPublicAchievementsWithDependencies({
     dbClient: dbAchievementClient,
   });
+}
+
+async function getAchievementLeaderboardByChannelIdWithDependencies(
+  channelId: string,
+  query: AchievementLeaderboardQuery,
+  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+): Promise<AchievementLeaderboardEntry[]> {
+  return dependencies.dbClient.getAchievementLeaderboardByChannelId(
+    channelId,
+    query,
+  );
+}
+
+async function getAchievementLeaderboardByChannelId(
+  channelId: string,
+  query: AchievementLeaderboardQuery,
+): Promise<AchievementLeaderboardEntry[]> {
+  return getAchievementLeaderboardByChannelIdWithDependencies(
+    channelId,
+    query,
+    {
+      dbClient: dbAchievementClient,
+    },
+  );
 }
 
 async function getAchievementsByUserIdWithDependencies(
@@ -315,8 +358,11 @@ export {
   activateAchievementWithDependencies,
   createAchievement,
   createAchievementWithDependencies,
+  defaultAchievementImagePlaceholder,
   generateAchievementSuggestion,
   generateAchievementSuggestionWithDependencies,
+  getAchievementLeaderboardByChannelId,
+  getAchievementLeaderboardByChannelIdWithDependencies,
   getAchievementById,
   getAchievementByIdWithDependencies,
   getAchievementsByChannelId,

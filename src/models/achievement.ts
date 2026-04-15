@@ -41,8 +41,16 @@ interface AchievementSuggestion {
   type: AchievementType;
 }
 
+interface AchievementLeaderboardEntry {
+  userId: string;
+  username: string;
+  xp: number;
+  completed: number;
+}
+
 export type {
   Achievement,
+  AchievementLeaderboardEntry,
   AchievementSuggestion,
   AchievementType,
   AchievementUserState,

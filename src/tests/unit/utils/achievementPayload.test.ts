@@ -1,10 +1,12 @@
 /* global describe, expect, it */
 import {
+  mapDbAchievementLeaderboardResponse,
   mapAiSuggestionToResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
@@ -343,6 +345,46 @@ describe("achievementPayload", () => {
     );
   });
 
+  it("should parse a valid achievement leaderboard query", () => {
+    expect(
+      parseAchievementLeaderboardQuery({
+        limit: "5",
+        sort: "completed",
+      }),
+    ).toEqual({
+      limit: 5,
+      sort: "completed",
+    });
+
+    expect(parseAchievementLeaderboardQuery({})).toEqual({});
+  });
+
+  it("should reject invalid achievement leaderboard query values", () => {
+    expect(() =>
+      parseAchievementLeaderboardQuery({
+        limit: "0",
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "limit must be a positive integer",
+      ),
+    );
+
+    expect(() =>
+      parseAchievementLeaderboardQuery({
+        sort: "invalid",
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "sort must be either xp or completed",
+      ),
+    );
+  });
+
   it("should map a DB achievement response with the new camelCase contract", () => {
     expect(
       mapDbAchievementToResponse({
@@ -425,6 +467,26 @@ describe("achievementPayload", () => {
           label: "countMessage",
           data: null,
         },
+      },
+    ]);
+  });
+
+  it("should map a DB achievement leaderboard response", () => {
+    expect(
+      mapDbAchievementLeaderboardResponse([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]),
+    ).toEqual([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
       },
     ]);
   });
@@ -538,6 +600,13 @@ describe("achievementPayload", () => {
         502,
         "db_service_error",
         "DB service returned an invalid achievement list payload",
+      ),
+    );
+    expect(() => mapDbAchievementLeaderboardResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement leaderboard payload",
       ),
     );
     expect(() =>

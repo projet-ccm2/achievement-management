@@ -3,10 +3,12 @@ import { ApplicationError } from "../../../middlewares/errorHandler";
 import {
   activateAchievementWithDependencies,
   createAchievementWithDependencies,
+  defaultAchievementImagePlaceholder,
   deactivateAchievementWithDependencies,
   deleteAchievementWithDependencies,
   generateAchievementSuggestionWithDependencies,
   getAchievementByIdWithDependencies,
+  getAchievementLeaderboardByChannelIdWithDependencies,
   getAchievementsByChannelIdWithDependencies,
   getAchievementsByUserIdAndChannelIdWithDependencies,
   getAchievementsByUserIdWithDependencies,
@@ -60,6 +62,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -77,11 +80,123 @@ describe("achievementService", () => {
       notificationClient,
     });
 
-    expect(dbClient.createAchievement).toHaveBeenCalledWith(payload);
+    expect(dbClient.createAchievement).toHaveBeenCalledWith({
+      ...payload,
+      image: defaultAchievementImagePlaceholder,
+    });
     expect(notificationClient.invalidateChannelCache).toHaveBeenCalledWith(
       "channel-1",
     );
     expect(achievement.id).toBe("achievement-1");
+  });
+
+  it("should use a placeholder image on create when no image is provided", async () => {
+    const dbClient = {
+      createAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: defaultAchievementImagePlaceholder,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+    };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await createAchievementWithDependencies(payload, {
+      bucketClient,
+      dbClient,
+      notificationClient,
+    });
+
+    expect(bucketClient.uploadAchievementImage).not.toHaveBeenCalled();
+    expect(dbClient.createAchievement).toHaveBeenCalledWith({
+      ...payload,
+      image: defaultAchievementImagePlaceholder,
+    });
+  });
+
+  it("should keep the provided image on create when one is sent", async () => {
+    const dbClient = {
+      createAchievement: jest.fn().mockResolvedValue({
+        id: "achievement-1",
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: "https://image.test/file.png",
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+      updateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+    };
+    const bucketClient = {
+      uploadAchievementImage: jest.fn(),
+    };
+    const notificationClient = {
+      invalidateChannelCache: jest.fn().mockResolvedValue(undefined),
+    };
+
+    await createAchievementWithDependencies(
+      {
+        ...payload,
+        image: "https://image.test/file.png",
+      },
+      {
+        bucketClient,
+        dbClient,
+        notificationClient,
+      },
+    );
+
+    expect(dbClient.createAchievement).toHaveBeenCalledWith({
+      ...payload,
+      image: "https://image.test/file.png",
+    });
   });
 
   it("should surface notification invalidation failures", async () => {
@@ -111,6 +226,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -164,6 +280,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -216,6 +333,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -269,6 +387,7 @@ describe("achievementService", () => {
       activateAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -348,6 +467,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -397,6 +517,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -482,6 +603,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -581,6 +703,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -676,6 +799,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn().mockResolvedValue(deletedAchievement),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -723,6 +847,7 @@ describe("achievementService", () => {
       }),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -773,6 +898,7 @@ describe("achievementService", () => {
       }),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -829,6 +955,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -876,6 +1003,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -928,6 +1056,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -982,6 +1111,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -1029,6 +1159,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -1079,6 +1210,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -1133,6 +1265,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn().mockResolvedValue(fetchedAchievement),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn(),
@@ -1175,6 +1308,7 @@ describe("achievementService", () => {
         },
       }),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -1271,6 +1405,7 @@ describe("achievementService", () => {
           },
         },
       ]),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn(),
@@ -1288,6 +1423,57 @@ describe("achievementService", () => {
       "channel-1",
     );
     expect(achievements).toHaveLength(1);
+  });
+
+  it("should get achievement leaderboard by channel through dependencies", async () => {
+    const dbClient = {
+      createAchievement: jest.fn(),
+      activateAchievement: jest.fn(),
+      deactivateAchievement: jest.fn(),
+      deleteAchievement: jest.fn(),
+      getAchievementById: jest.fn(),
+      getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn().mockResolvedValue([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]),
+      getAchievementsByUserIdAndChannelId: jest.fn(),
+      getAchievementsByUserId: jest.fn(),
+      getPublicAchievements: jest.fn(),
+      updateAchievement: jest.fn(),
+    };
+
+    const leaderboard =
+      await getAchievementLeaderboardByChannelIdWithDependencies(
+        "channel-1",
+        {
+          limit: 5,
+          sort: "completed",
+        },
+        {
+          dbClient,
+        },
+      );
+
+    expect(dbClient.getAchievementLeaderboardByChannelId).toHaveBeenCalledWith(
+      "channel-1",
+      {
+        limit: 5,
+        sort: "completed",
+      },
+    );
+    expect(leaderboard).toEqual([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
+      },
+    ]);
   });
 
   it("should use the default dependencies in getPublicAchievements", async () => {
@@ -1323,6 +1509,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest.fn(),
         getAchievementsByUserId: jest.fn(),
         getPublicAchievements: jest.fn().mockResolvedValue(fetchedAchievements),
@@ -1345,6 +1532,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn(),
       getAchievementsByUserId: jest.fn(),
       getPublicAchievements: jest.fn().mockResolvedValue([
@@ -1470,6 +1658,7 @@ describe("achievementService", () => {
           },
         },
       ]),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getPublicAchievements: jest.fn(),
       updateAchievement: jest.fn(),
     };
@@ -1524,6 +1713,7 @@ describe("achievementService", () => {
         deleteAchievement: jest.fn(),
         getAchievementById: jest.fn(),
         getAchievementsByChannelId: jest.fn(),
+        getAchievementLeaderboardByChannelId: jest.fn(),
         getAchievementsByUserIdAndChannelId: jest
           .fn()
           .mockResolvedValue(fetchedAchievements),
@@ -1550,6 +1740,7 @@ describe("achievementService", () => {
       deleteAchievement: jest.fn(),
       getAchievementById: jest.fn(),
       getAchievementsByChannelId: jest.fn(),
+      getAchievementLeaderboardByChannelId: jest.fn(),
       getAchievementsByUserIdAndChannelId: jest.fn().mockResolvedValue([
         {
           id: "achievement-1",

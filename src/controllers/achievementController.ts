@@ -5,6 +5,7 @@ import {
   deactivateAchievement,
   deleteAchievement,
   generateAchievementSuggestion,
+  getAchievementLeaderboardByChannelId,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserId,
@@ -13,6 +14,7 @@ import {
   updateAchievement,
 } from "../services/achievementService";
 import {
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
@@ -137,6 +139,24 @@ function buildGetAchievementsByChannelIdHandler(
 const getAchievementsByChannelIdHandler =
   buildGetAchievementsByChannelIdHandler(getAchievementsByChannelId);
 
+function buildGetAchievementLeaderboardByChannelIdHandler(
+  getAchievementLeaderboardByChannelIdAction: typeof getAchievementLeaderboardByChannelId,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const leaderboard = await getAchievementLeaderboardByChannelIdAction(
+      req.params.channelId,
+      parseAchievementLeaderboardQuery(req.query),
+    );
+
+    res.status(200).json(leaderboard);
+  };
+}
+
+const getAchievementLeaderboardByChannelIdHandler =
+  buildGetAchievementLeaderboardByChannelIdHandler(
+    getAchievementLeaderboardByChannelId,
+  );
+
 function buildGetPublicAchievementsHandler(
   getPublicAchievementsAction: typeof getPublicAchievements,
 ): RequestHandler {
@@ -189,6 +209,7 @@ export {
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildGenerateAchievementSuggestionHandler,
+  buildGetAchievementLeaderboardByChannelIdHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
   buildGetAchievementsByUserIdHandler,
@@ -200,6 +221,7 @@ export {
   deactivateAchievementHandler,
   deleteAchievementHandler,
   generateAchievementSuggestionHandler,
+  getAchievementLeaderboardByChannelIdHandler,
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
   getAchievementsByUserIdHandler,

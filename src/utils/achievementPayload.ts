@@ -1,6 +1,7 @@
 import { ApplicationError } from "../middlewares/errorHandler";
 import {
   Achievement,
+  AchievementLeaderboardEntry,
   AchievementSuggestion,
   UserAchievement,
 } from "../models/achievement";
@@ -78,6 +79,11 @@ interface AchievementImageUpload {
 
 interface AiSuggestionRequest {
   prompt: string;
+}
+
+interface AchievementLeaderboardQuery {
+  limit?: number;
+  sort?: "xp" | "completed";
 }
 
 type CreateAchievementResponse = Achievement;
@@ -479,6 +485,72 @@ function readOptionalNullableString(
   return readRequiredString(value, fieldName);
 }
 
+function readOptionalPositiveIntegerQuery(
+  value: unknown,
+  fieldName: string,
+): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a positive integer`,
+    );
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!/^\d+$/.test(trimmedValue) || Number(trimmedValue) <= 0) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a positive integer`,
+    );
+  }
+
+  return Number(trimmedValue);
+}
+
+function parseAchievementLeaderboardQuery(
+  query: unknown,
+): AchievementLeaderboardQuery {
+  const limit = readOptionalPositiveIntegerQuery(
+    (query as Record<string, unknown> | undefined)?.limit,
+    "limit",
+  );
+  const rawSort = (query as Record<string, unknown> | undefined)?.sort;
+
+  if (rawSort === undefined) {
+    return { limit };
+  }
+
+  if (typeof rawSort !== "string") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "sort must be either xp or completed",
+    );
+  }
+
+  const normalizedSort = rawSort.trim();
+
+  if (normalizedSort !== "xp" && normalizedSort !== "completed") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "sort must be either xp or completed",
+    );
+  }
+
+  return {
+    limit,
+    sort: normalizedSort,
+  };
+}
+
 function mapDbUserState(
   body: Record<string, unknown>,
 ): UserAchievement["userState"] {
@@ -544,18 +616,50 @@ function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
   );
 }
 
+function mapDbAchievementLeaderboardResponse(
+  body: unknown,
+): AchievementLeaderboardEntry[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement leaderboard payload",
+    );
+  }
+
+  return body.map((entry) => {
+    if (!isRecord(entry)) {
+      throw new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement leaderboard payload",
+      );
+    }
+
+    return {
+      userId: readRequiredString(entry.userId, "userId"),
+      username: readRequiredString(entry.username, "username"),
+      xp: readNonNegativeInteger(entry.xp, "xp"),
+      completed: readNonNegativeInteger(entry.completed, "completed"),
+    };
+  });
+}
+
 export {
+  mapDbAchievementLeaderboardResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
   mapAiSuggestionToResponse,
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
 };
 export type {
+  AchievementLeaderboardQuery,
   AiSuggestionRequest,
   AiSuggestionResponse,
   CreateAchievementRequest,
