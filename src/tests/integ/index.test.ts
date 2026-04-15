@@ -121,6 +121,28 @@ describe("Express App", () => {
       expect(response.headers["access-control-allow-headers"]).toBe(
         "Content-Type, Authorization",
       );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should expose CORS headers for a Twitch extension origin", async () => {
+      const response = await request(app)
+        .get("/health")
+        .set("Origin", "https://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(200);
+      expect(response.headers["access-control-allow-origin"]).toBe(
+        "https://abc123.ext-twitch.tv",
+      );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should reject malformed Twitch-like origins", async () => {
+      const response = await request(app)
+        .get("/health")
+        .set("Origin", "http://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(200);
+      expect(response.headers["access-control-allow-origin"]).toBeUndefined();
     });
 
     it("should not expose CORS headers for a disallowed origin", async () => {
@@ -141,6 +163,25 @@ describe("Express App", () => {
       expect(response.headers["access-control-allow-origin"]).toBe(
         "http://localhost:3000",
       );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should answer Twitch extension preflight requests", async () => {
+      const response = await request(app)
+        .options("/achievements")
+        .set("Origin", "https://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(204);
+      expect(response.headers["access-control-allow-origin"]).toBe(
+        "https://abc123.ext-twitch.tv",
+      );
+      expect(response.headers["access-control-allow-methods"]).toBe(
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      );
+      expect(response.headers["access-control-allow-headers"]).toBe(
+        "Content-Type, Authorization",
+      );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
     });
   });
 
