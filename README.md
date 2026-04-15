@@ -120,6 +120,10 @@ Detailed contract:
 
 - [achievement-management-api.md](/C:/Users/maxim/OneDrive/Bureau/achievement-management/docs/achievement-management-api.md)
 
+Create behavior:
+
+- `POST /achievements` forces `label` to `" "`
+
 ## Stable response shape
 
 Achievement responses are normalized to:
@@ -191,5 +195,3 @@ Required after each change:
 Build:
 
 - `npm.cmd run build`
-
-

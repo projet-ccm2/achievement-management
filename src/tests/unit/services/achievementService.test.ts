@@ -20,7 +20,7 @@ describe("achievementService", () => {
     description: "Desc",
     goal: 1,
     reward: 0,
-    label: "",
+    label: " ",
     public: false,
     active: true,
     secret: false,

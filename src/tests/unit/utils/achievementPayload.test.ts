@@ -46,7 +46,7 @@ describe("achievementPayload", () => {
       description: "Desc",
       goal: 5,
       reward: 0,
-      label: "",
+      label: " ",
       public: true,
       active: true,
       secret: false,
@@ -60,7 +60,7 @@ describe("achievementPayload", () => {
     });
   });
 
-  it("should default create label to an empty string when omitted", () => {
+  it("should default create label to a single space when omitted", () => {
     expect(
       parseCreateAchievementRequest({
         title: "First",
@@ -116,7 +116,7 @@ describe("achievementPayload", () => {
       description: "Desc",
       goal: 2,
       reward: 10,
-      label: "",
+      label: " ",
       public: false,
       active: true,
       secret: false,
@@ -156,7 +156,7 @@ describe("achievementPayload", () => {
       description: "Desc",
       goal: 5,
       reward: 0,
-      label: "",
+      label: " ",
       public: true,
       active: true,
       secret: false,
