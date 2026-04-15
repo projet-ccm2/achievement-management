@@ -1,5 +1,5 @@
 /* global Blob, Buffer, FormData, Response */
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
 import { AchievementImageUpload } from "../utils/achievementPayload";
@@ -16,7 +16,8 @@ interface BucketAchievementClient {
 
 function decodeBase64Content(contentBase64: string): Buffer {
   const trimmedContent = contentBase64.trim();
-  const dataUrlPrefixMatch = trimmedContent.match(/^data:[^;]+;base64,(.+)$/);
+  const dataUrlPrefixPattern = /^data:[^;]+;base64,(.+)$/;
+  const dataUrlPrefixMatch = dataUrlPrefixPattern.exec(trimmedContent);
   const normalizedContent = dataUrlPrefixMatch
     ? dataUrlPrefixMatch[1]
     : trimmedContent;

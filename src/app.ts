@@ -1,4 +1,3 @@
-/* global URL */
 import express from "express";
 import {
   activateAchievementHandler,
@@ -20,23 +19,23 @@ import { config } from "./config/environment";
 const app = express();
 const allowedMethods = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const allowedHeaders = "Content-Type, Authorization";
+const twitchExtensionOriginPattern =
+  /^https:\/\/([a-z0-9-]+)\.ext-twitch\.tv$/i;
 
 function resolveAllowedTwitchExtensionOrigin(origin: string): string | null {
-  try {
-    const parsedOrigin = new URL(origin);
+  const match = twitchExtensionOriginPattern.exec(origin);
 
-    if (
-      parsedOrigin.protocol !== "https:" ||
-      parsedOrigin.hostname.endsWith(".ext-twitch.tv") === false ||
-      parsedOrigin.port !== ""
-    ) {
-      return null;
-    }
-
-    return `https://${parsedOrigin.hostname}`;
-  } catch {
+  if (!match) {
     return null;
   }
+
+  const extensionId = match[1]?.toLowerCase();
+
+  if (!extensionId) {
+    return null;
+  }
+
+  return `https://${extensionId}.ext-twitch.tv`;
 }
 
 function resolveAllowedCorsOrigin(origin: string): string | null {

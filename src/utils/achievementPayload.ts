@@ -188,7 +188,10 @@ function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
     return trimmedValue as SupportedTriggerLabel;
   }
 
-  const normalizedValue = trimmedValue.toLowerCase().replace(/[\s-]+/g, "_");
+  const normalizedValue = trimmedValue
+    .toLowerCase()
+    .split(/[\s-]+/)
+    .join("_");
   const aliasedValue = triggerLabelAliases.get(normalizedValue);
 
   if (!aliasedValue) {
