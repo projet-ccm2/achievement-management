@@ -93,23 +93,12 @@ async function resolveAchievementImageUrlWithDependencies(
   return bucketClient.getAchievementImageUrl(imageId);
 }
 
-async function enrichAchievementImageWithDependencies(
-  achievement: Achievement,
+async function enrichAchievementLikeImageWithDependencies<
+  TAchievement extends Achievement,
+>(
+  achievement: TAchievement,
   bucketClient: BucketAchievementClient,
-): Promise<Achievement> {
-  return {
-    ...achievement,
-    image: await resolveAchievementImageUrlWithDependencies(
-      achievement.image,
-      bucketClient,
-    ),
-  };
-}
-
-async function enrichUserAchievementImageWithDependencies(
-  achievement: UserAchievement,
-  bucketClient: BucketAchievementClient,
-): Promise<UserAchievement> {
+): Promise<TAchievement> {
   return {
     ...achievement,
     image: await resolveAchievementImageUrlWithDependencies(
@@ -171,7 +160,7 @@ async function createAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement creation",
   );
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     dependencies.bucketClient,
   );
@@ -197,7 +186,7 @@ async function getAchievementByIdWithDependencies(
   const achievement =
     await dependencies.dbClient.getAchievementById(achievementId);
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     dependencies.bucketClient,
   );
@@ -222,7 +211,7 @@ async function getAchievementsByChannelIdWithDependencies(
 
   return Promise.all(
     achievements.map((achievement) =>
-      enrichAchievementImageWithDependencies(
+      enrichAchievementLikeImageWithDependencies(
         achievement,
         dependencies.bucketClient,
       ),
@@ -249,7 +238,7 @@ async function getPublicAchievementsWithDependencies(
 
   return Promise.all(
     achievements.map((achievement) =>
-      enrichAchievementImageWithDependencies(
+      enrichAchievementLikeImageWithDependencies(
         achievement,
         dependencies.bucketClient,
       ),
@@ -300,7 +289,7 @@ async function getAchievementsByUserIdWithDependencies(
 
   return Promise.all(
     achievements.map((achievement) =>
-      enrichUserAchievementImageWithDependencies(
+      enrichAchievementLikeImageWithDependencies(
         achievement,
         dependencies.bucketClient,
       ),
@@ -333,7 +322,7 @@ async function getAchievementsByUserIdAndChannelIdWithDependencies(
 
   return Promise.all(
     achievements.map((achievement) =>
-      enrichUserAchievementImageWithDependencies(
+      enrichAchievementLikeImageWithDependencies(
         achievement,
         dependencies.bucketClient,
       ),
@@ -395,7 +384,7 @@ async function updateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement update",
   );
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     dependencies.bucketClient,
   );
@@ -425,7 +414,7 @@ async function deleteAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement deletion",
   );
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     bucketAchievementClient,
   );
@@ -451,7 +440,7 @@ async function deactivateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement deactivation",
   );
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     bucketAchievementClient,
   );
@@ -479,7 +468,7 @@ async function activateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement activation",
   );
 
-  return enrichAchievementImageWithDependencies(
+  return enrichAchievementLikeImageWithDependencies(
     achievement,
     bucketAchievementClient,
   );
