@@ -259,13 +259,13 @@ describe("achievementDbClient", () => {
     expect(achievement.id).toBe("achievement-1");
   });
 
-  it("should send an empty type data string for message achievements", async () => {
+  it("should send a non-empty fallback type data for message achievements", async () => {
     (global.fetch as jest.Mock)
       .mockResolvedValueOnce(
         mockJsonResponse({
           id: "type-1",
           label: "countMessage",
-          data: "",
+          data: "countMessage",
         }),
       )
       .mockResolvedValueOnce(mockJsonResponse(buildDbAchievementResponse()));
@@ -295,7 +295,49 @@ describe("achievementDbClient", () => {
       expect.objectContaining({
         body: JSON.stringify({
           label: "countMessage",
-          data: "",
+          data: "countMessage",
+        }),
+      }),
+    );
+  });
+
+  it("should preserve provided message type data when creating the type", async () => {
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce(
+        mockJsonResponse({
+          id: "type-1",
+          label: "countMessage",
+          data: "custom-message-type",
+        }),
+      )
+      .mockResolvedValueOnce(mockJsonResponse(buildDbAchievementResponse()));
+
+    const client = new HttpDbAchievementClient();
+
+    await client.createAchievement({
+      title: "First",
+      description: "Desc",
+      goal: 1,
+      reward: 0,
+      label: "",
+      public: false,
+      active: true,
+      secret: false,
+      image: null,
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: "custom-message-type",
+      },
+    });
+
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      1,
+      "http://db-service.test/type-achievements",
+      expect.objectContaining({
+        body: JSON.stringify({
+          label: "countMessage",
+          data: "custom-message-type",
         }),
       }),
     );

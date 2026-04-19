@@ -142,9 +142,13 @@ type DbResponseMapper<T> = (...args: [unknown]) => T;
 function buildTypeAchievementPayload(
   payload: CreateAchievementRequest | UpdateAchievementRequest,
 ): Record<string, string> {
+  const normalizedTypeData =
+    typeof payload.type.data === "string" ? payload.type.data.trim() : "";
+
   return {
     label: payload.type.label,
-    data: payload.type.data ?? "",
+    data:
+      normalizedTypeData.length > 0 ? normalizedTypeData : payload.type.label,
   };
 }
 

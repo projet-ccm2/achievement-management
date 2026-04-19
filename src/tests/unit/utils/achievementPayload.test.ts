@@ -176,6 +176,41 @@ describe("achievementPayload", () => {
     });
   });
 
+  it("should preserve provided type.data for countMessage payloads", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: "keep-this",
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: " ",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      imageUpload: null,
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: "keep-this",
+      },
+    });
+  });
+
   it("should reject invalid creation payloads", () => {
     expect(() => parseCreateAchievementRequest(null)).toThrow(
       new ApplicationError(

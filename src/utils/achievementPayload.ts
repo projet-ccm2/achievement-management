@@ -216,7 +216,11 @@ function normalizeTypeData(
   value: unknown,
 ): string | null {
   if (label === "countMessage") {
-    return null;
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    return readRequiredString(value, "type.data");
   }
 
   if (label === "countCostChannelPoint") {
@@ -349,10 +353,18 @@ function parseDbType(body: Record<string, unknown>): {
   const label = normalizeTriggerLabel(
     readRequiredString(labelSource, "Type_Label"),
   );
+  const mappedData =
+    label === "countMessage" &&
+    (dataSource === undefined ||
+      dataSource === null ||
+      (typeof dataSource === "string" && dataSource.trim().length === 0) ||
+      dataSource === "countMessage")
+      ? null
+      : normalizeTypeData(label, dataSource);
 
   return {
     label,
-    data: normalizeTypeData(label, dataSource),
+    data: mappedData,
   };
 }
 

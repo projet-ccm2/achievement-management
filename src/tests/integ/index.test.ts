@@ -367,6 +367,63 @@ describe("Express App", () => {
           "Notification handler cache invalidation failed after achievement creation",
       });
     });
+
+    it("should accept large JSON achievement payloads with imageUpload content", async () => {
+      createAchievementMock.mockResolvedValue({
+        id: "achievement-1",
+        title: "Large payload",
+        description: "Large payload",
+        goal: 100,
+        reward: 250,
+        label: " ",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: "bucket-key",
+        channelId: "channel-1",
+        type: {
+          label: "contentMessage",
+          data: "hello world",
+        },
+      });
+
+      const largeContentBase64 = "a".repeat(150_000);
+
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: "Large payload",
+          description: "Large payload",
+          goal: 100,
+          reward: 250,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          imageUpload: {
+            fileName: "achievement.png",
+            mimeType: "image/png",
+            contentBase64: largeContentBase64,
+          },
+          type: {
+            label: "contentMessage",
+            data: "hello world",
+          },
+        });
+
+      expect(response.status).toBe(201);
+      expect(createAchievementMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imageUpload: {
+            fileName: "achievement.png",
+            mimeType: "image/png",
+            contentBase64: largeContentBase64,
+          },
+        }),
+      );
+    });
   });
 
   describe("POST /achievements/ai-suggestion", () => {

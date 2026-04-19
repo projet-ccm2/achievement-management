@@ -82,6 +82,36 @@ describe("achievementBucketClient", () => {
     ).resolves.toBe("assets/image/achievement/achievement-1.png");
   });
 
+  it("should accept base64 payloads with embedded line breaks", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        key: "assets/image/achievement/achievement-1.png",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(
+      client.uploadAchievementImage({
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVz\ndA==",
+      }),
+    ).resolves.toBe("assets/image/achievement/achievement-1.png");
+  });
+
   it("should reject invalid base64 content", async () => {
     const {
       HttpBucketAchievementClient,

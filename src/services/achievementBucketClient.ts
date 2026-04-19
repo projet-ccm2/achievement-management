@@ -18,9 +18,10 @@ function decodeBase64Content(contentBase64: string): Buffer {
   const trimmedContent = contentBase64.trim();
   const dataUrlPrefixPattern = /^data:[^;]+;base64,(.+)$/;
   const dataUrlPrefixMatch = dataUrlPrefixPattern.exec(trimmedContent);
-  const normalizedContent = dataUrlPrefixMatch
+  const normalizedContentSource = dataUrlPrefixMatch
     ? dataUrlPrefixMatch[1]
     : trimmedContent;
+  const normalizedContent = normalizedContentSource.replace(/\s+/g, "");
 
   if (!/^[A-Za-z0-9+/=]+$/.test(normalizedContent)) {
     throw new ApplicationError(
