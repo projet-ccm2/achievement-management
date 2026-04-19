@@ -58,6 +58,67 @@ async function resolveImageWithDependencies(
   return bucketClient.uploadAchievementImage(imageUpload, imageId);
 }
 
+function isDirectImageUrl(image: string): boolean {
+  return /^https?:\/\//i.test(image);
+}
+
+function resolveStoredAchievementImageId(image: string): string | null {
+  const normalizedImage = image.trim();
+
+  if (normalizedImage.length === 0 || isDirectImageUrl(normalizedImage)) {
+    return null;
+  }
+
+  return normalizedImage;
+}
+
+async function resolveAchievementImageUrlWithDependencies(
+  image: string | null,
+  bucketClient: BucketAchievementClient,
+): Promise<string | null> {
+  if (!image) {
+    return null;
+  }
+
+  if (isDirectImageUrl(image)) {
+    return image;
+  }
+
+  const imageId = resolveStoredAchievementImageId(image);
+
+  if (!imageId) {
+    return image;
+  }
+
+  return bucketClient.getAchievementImageUrl(imageId);
+}
+
+async function enrichAchievementImageWithDependencies(
+  achievement: Achievement,
+  bucketClient: BucketAchievementClient,
+): Promise<Achievement> {
+  return {
+    ...achievement,
+    image: await resolveAchievementImageUrlWithDependencies(
+      achievement.image,
+      bucketClient,
+    ),
+  };
+}
+
+async function enrichUserAchievementImageWithDependencies(
+  achievement: UserAchievement,
+  bucketClient: BucketAchievementClient,
+): Promise<UserAchievement> {
+  return {
+    ...achievement,
+    image: await resolveAchievementImageUrlWithDependencies(
+      achievement.image,
+      bucketClient,
+    ),
+  };
+}
+
 async function resolveCreateImageWithDependencies(
   image: string | null,
   imageUpload: CreateAchievementRequest["imageUpload"],
@@ -110,7 +171,10 @@ async function createAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement creation",
   );
 
-  return achievement;
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    dependencies.bucketClient,
+  );
 }
 
 async function createAchievement(
@@ -125,40 +189,77 @@ async function createAchievement(
 
 async function getAchievementByIdWithDependencies(
   achievementId: string,
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: Pick<
+    AchievementImageServiceDependencies,
+    "dbClient" | "bucketClient"
+  >,
 ): Promise<Achievement> {
-  return dependencies.dbClient.getAchievementById(achievementId);
+  const achievement =
+    await dependencies.dbClient.getAchievementById(achievementId);
+
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    dependencies.bucketClient,
+  );
 }
 
 async function getAchievementById(achievementId: string): Promise<Achievement> {
   return getAchievementByIdWithDependencies(achievementId, {
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
   });
 }
 
 async function getAchievementsByChannelIdWithDependencies(
   channelId: string,
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: Pick<
+    AchievementImageServiceDependencies,
+    "dbClient" | "bucketClient"
+  >,
 ): Promise<Achievement[]> {
-  return dependencies.dbClient.getAchievementsByChannelId(channelId);
+  const achievements =
+    await dependencies.dbClient.getAchievementsByChannelId(channelId);
+
+  return Promise.all(
+    achievements.map((achievement) =>
+      enrichAchievementImageWithDependencies(
+        achievement,
+        dependencies.bucketClient,
+      ),
+    ),
+  );
 }
 
 async function getAchievementsByChannelId(
   channelId: string,
 ): Promise<Achievement[]> {
   return getAchievementsByChannelIdWithDependencies(channelId, {
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
   });
 }
 
 async function getPublicAchievementsWithDependencies(
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: Pick<
+    AchievementImageServiceDependencies,
+    "dbClient" | "bucketClient"
+  >,
 ): Promise<Achievement[]> {
-  return dependencies.dbClient.getPublicAchievements();
+  const achievements = await dependencies.dbClient.getPublicAchievements();
+
+  return Promise.all(
+    achievements.map((achievement) =>
+      enrichAchievementImageWithDependencies(
+        achievement,
+        dependencies.bucketClient,
+      ),
+    ),
+  );
 }
 
 async function getPublicAchievements(): Promise<Achievement[]> {
   return getPublicAchievementsWithDependencies({
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
   });
 }
@@ -189,15 +290,29 @@ async function getAchievementLeaderboardByChannelId(
 
 async function getAchievementsByUserIdWithDependencies(
   userId: string,
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: Pick<
+    AchievementImageServiceDependencies,
+    "dbClient" | "bucketClient"
+  >,
 ): Promise<UserAchievement[]> {
-  return dependencies.dbClient.getAchievementsByUserId(userId);
+  const achievements =
+    await dependencies.dbClient.getAchievementsByUserId(userId);
+
+  return Promise.all(
+    achievements.map((achievement) =>
+      enrichUserAchievementImageWithDependencies(
+        achievement,
+        dependencies.bucketClient,
+      ),
+    ),
+  );
 }
 
 async function getAchievementsByUserId(
   userId: string,
 ): Promise<UserAchievement[]> {
   return getAchievementsByUserIdWithDependencies(userId, {
+    bucketClient: bucketAchievementClient,
     dbClient: dbAchievementClient,
   });
 }
@@ -205,11 +320,24 @@ async function getAchievementsByUserId(
 async function getAchievementsByUserIdAndChannelIdWithDependencies(
   userId: string,
   channelId: string,
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: Pick<
+    AchievementImageServiceDependencies,
+    "dbClient" | "bucketClient"
+  >,
 ): Promise<UserAchievement[]> {
-  return dependencies.dbClient.getAchievementsByUserIdAndChannelId(
-    userId,
-    channelId,
+  const achievements =
+    await dependencies.dbClient.getAchievementsByUserIdAndChannelId(
+      userId,
+      channelId,
+    );
+
+  return Promise.all(
+    achievements.map((achievement) =>
+      enrichUserAchievementImageWithDependencies(
+        achievement,
+        dependencies.bucketClient,
+      ),
+    ),
   );
 }
 
@@ -221,6 +349,7 @@ async function getAchievementsByUserIdAndChannelId(
     userId,
     channelId,
     {
+      bucketClient: bucketAchievementClient,
       dbClient: dbAchievementClient,
     },
   );
@@ -266,7 +395,10 @@ async function updateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement update",
   );
 
-  return achievement;
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    dependencies.bucketClient,
+  );
 }
 
 async function updateAchievement(
@@ -293,7 +425,10 @@ async function deleteAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement deletion",
   );
 
-  return achievement;
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    bucketAchievementClient,
+  );
 }
 
 async function deleteAchievement(achievementId: string): Promise<Achievement> {
@@ -316,7 +451,10 @@ async function deactivateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement deactivation",
   );
 
-  return achievement;
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    bucketAchievementClient,
+  );
 }
 
 async function deactivateAchievement(
@@ -341,7 +479,10 @@ async function activateAchievementWithDependencies(
     "Notification handler cache invalidation failed after achievement activation",
   );
 
-  return achievement;
+  return enrichAchievementImageWithDependencies(
+    achievement,
+    bucketAchievementClient,
+  );
 }
 
 async function activateAchievement(

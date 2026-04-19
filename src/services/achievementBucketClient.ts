@@ -11,6 +11,7 @@ interface BucketAchievementClient {
     imageUpload: AchievementImageUpload,
     elementId?: string,
   ): Promise<string>;
+  getAchievementImageUrl(imageId: string): Promise<string>;
 }
 /* eslint-enable no-unused-vars */
 
@@ -42,6 +43,18 @@ function parseBucketResponse(response: Response): Promise<unknown> {
   }
 
   return response.text();
+}
+
+function buildAchievementBucketKey(imageId: string): string {
+  return `assets/image/achievement/${imageId}.webp`;
+}
+
+function extractAchievementImageIdFromKey(key: string): string | null {
+  const normalizedKey = key.trim();
+  const keyPattern = /^assets\/image\/achievement\/([^/]+)\.webp$/;
+  const keyMatch = keyPattern.exec(normalizedKey);
+
+  return keyMatch ? keyMatch[1] : null;
 }
 
 class HttpBucketAchievementClient implements BucketAchievementClient {
@@ -93,9 +106,12 @@ class HttpBucketAchievementClient implements BucketAchievementClient {
       );
     }
 
-    const bodyRecord = parsedBody as { key?: unknown } | null;
+    const bodyRecord = parsedBody as {
+      imageId?: unknown;
+      key?: unknown;
+    } | null;
 
-    if (!bodyRecord || typeof bodyRecord.key !== "string") {
+    if (!bodyRecord) {
       throw new ApplicationError(
         502,
         "bucket_manager_error",
@@ -103,12 +119,73 @@ class HttpBucketAchievementClient implements BucketAchievementClient {
       );
     }
 
-    return bodyRecord.key;
+    if (typeof bodyRecord.imageId === "string") {
+      return bodyRecord.imageId;
+    }
+
+    if (typeof bodyRecord.key === "string") {
+      const extractedImageId = extractAchievementImageIdFromKey(bodyRecord.key);
+
+      if (extractedImageId) {
+        return extractedImageId;
+      }
+    }
+
+    throw new ApplicationError(
+      502,
+      "bucket_manager_error",
+      "Bucket manager returned an invalid image payload",
+    );
+  }
+
+  public async getAchievementImageUrl(imageId: string): Promise<string> {
+    const response = await timedFetch({
+      url: `${config.bucketManagerUrl}/bucket/image/get?typeImage=achievement&elementId=${encodeURIComponent(
+        imageId,
+      )}`,
+      method: "GET",
+      serviceName: "bucket-manager",
+      errorCode: "bucket_manager_error",
+      networkErrorMessage:
+        "Bucket manager could not retrieve the achievement image URL",
+      timeoutErrorMessage:
+        "Bucket manager request timed out while retrieving the achievement image URL",
+      init: {
+        method: "GET",
+      },
+    });
+    const parsedBody = await parseBucketResponse(response);
+
+    if (!response.ok) {
+      throw new ApplicationError(
+        response.status >= 500 ? 502 : response.status,
+        "bucket_manager_error",
+        "Bucket manager could not retrieve the achievement image URL",
+        parsedBody,
+      );
+    }
+
+    const bodyRecord = parsedBody as { url?: unknown } | null;
+
+    if (!bodyRecord || typeof bodyRecord.url !== "string") {
+      throw new ApplicationError(
+        502,
+        "bucket_manager_error",
+        "Bucket manager returned an invalid image URL payload",
+      );
+    }
+
+    return bodyRecord.url;
   }
 }
 
 const bucketAchievementClient: BucketAchievementClient =
   new HttpBucketAchievementClient();
 
-export { HttpBucketAchievementClient, bucketAchievementClient };
+export {
+  buildAchievementBucketKey,
+  extractAchievementImageIdFromKey,
+  HttpBucketAchievementClient,
+  bucketAchievementClient,
+};
 export type { BucketAchievementClient };

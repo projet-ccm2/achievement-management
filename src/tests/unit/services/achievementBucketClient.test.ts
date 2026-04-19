@@ -15,7 +15,7 @@ describe("achievementBucketClient", () => {
     const { timedFetch } = require("../../../utils/http");
     const response = new Response(
       JSON.stringify({
-        key: "assets/image/achievement/achievement-1.png",
+        imageId: "achievement-1",
       }),
       {
         status: 200,
@@ -41,7 +41,7 @@ describe("achievementBucketClient", () => {
         },
         "achievement-1",
       ),
-    ).resolves.toBe("assets/image/achievement/achievement-1.png");
+    ).resolves.toBe("achievement-1");
 
     expect(timedFetch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -52,11 +52,46 @@ describe("achievementBucketClient", () => {
     );
   });
 
+  it("should reconstruct the bucket key from imageId responses", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        success: true,
+        imageId: "achievement-1",
+        message: "Image uploaded successfully",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(
+      client.uploadAchievementImage(
+        {
+          fileName: "achievement.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+        "achievement-1",
+      ),
+    ).resolves.toBe("achievement-1");
+  });
+
   it("should accept data URL base64 payloads", async () => {
     const { timedFetch } = require("../../../utils/http");
     const response = new Response(
       JSON.stringify({
-        key: "assets/image/achievement/achievement-1.png",
+        imageId: "achievement-1",
       }),
       {
         status: 200,
@@ -79,14 +114,14 @@ describe("achievementBucketClient", () => {
         mimeType: "image/png",
         contentBase64: "data:image/png;base64,dGVzdA==",
       }),
-    ).resolves.toBe("assets/image/achievement/achievement-1.png");
+    ).resolves.toBe("achievement-1");
   });
 
   it("should accept base64 payloads with embedded line breaks", async () => {
     const { timedFetch } = require("../../../utils/http");
     const response = new Response(
       JSON.stringify({
-        key: "assets/image/achievement/achievement-1.png",
+        imageId: "achievement-1",
       }),
       {
         status: 200,
@@ -109,7 +144,63 @@ describe("achievementBucketClient", () => {
         mimeType: "image/png",
         contentBase64: "dGVz\ndA==",
       }),
-    ).resolves.toBe("assets/image/achievement/achievement-1.png");
+    ).resolves.toBe("achievement-1");
+  });
+
+  it("should accept legacy key payloads and extract imageId", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        key: "assets/image/achievement/achievement-1.webp",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(
+      client.uploadAchievementImage({
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      }),
+    ).resolves.toBe("achievement-1");
+  });
+
+  it("should retrieve a signed achievement image url", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        url: "https://bucket.test/signed-image",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(client.getAchievementImageUrl("achievement-1")).resolves.toBe(
+      "https://bucket.test/signed-image",
+    );
   });
 
   it("should reject invalid base64 content", async () => {
