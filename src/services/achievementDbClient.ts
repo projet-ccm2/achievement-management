@@ -108,10 +108,17 @@ function buildDbCreateBadgePayload(
 function buildDbUpdateBadgePayload(
   payload: UpdateBadgeRequest,
 ): Record<string, unknown> {
-  return {
-    ...(payload.title !== undefined ? { title: payload.title } : {}),
-    ...(payload.image !== undefined ? { img: payload.image } : {}),
-  };
+  const dbPayload: Record<string, unknown> = {};
+
+  if (payload.title !== undefined) {
+    dbPayload.title = payload.title;
+  }
+
+  if (payload.image !== undefined) {
+    dbPayload.img = payload.image;
+  }
+
+  return dbPayload;
 }
 
 async function parseDbResponse(response: Response): Promise<unknown> {
