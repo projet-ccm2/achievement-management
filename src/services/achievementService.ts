@@ -3,6 +3,7 @@ import {
   Achievement,
   AchievementLeaderboardEntry,
   AchievementSuggestion,
+  Badge,
   UserAchievement,
 } from "../models/achievement";
 import {
@@ -24,23 +25,40 @@ import {
 import {
   AchievementLeaderboardQuery,
   AiSuggestionRequest,
+  CreateBadgeRequest,
   CreateAchievementRequest,
+  UpdateBadgeRequest,
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
-
-interface AchievementServiceDependencies {
-  dbClient: DbAchievementClient;
-  notificationClient: NotificationCacheClient;
-}
-
-interface AchievementImageServiceDependencies
-  extends AchievementServiceDependencies {
-  bucketClient: BucketAchievementClient;
-}
 
 interface AchievementAiServiceDependencies {
   aiClient: AiAchievementClient;
 }
+
+type NotificationDependencies = Pick<
+  NotificationCacheClient,
+  "invalidateChannelCache"
+>;
+
+type AchievementBucketReadDependencies = Pick<
+  BucketAchievementClient,
+  "getAchievementImageUrl"
+>;
+
+type AchievementBucketWriteDependencies = Pick<
+  BucketAchievementClient,
+  "uploadAchievementImage" | "getAchievementImageUrl"
+>;
+
+type BadgeBucketReadDependencies = Pick<
+  BucketAchievementClient,
+  "getBadgeImageUrl"
+>;
+
+type BadgeBucketWriteDependencies = Pick<
+  BucketAchievementClient,
+  "uploadBadgeImage" | "getBadgeImageUrl"
+>;
 
 const defaultAchievementImagePlaceholder =
   "https://placehold.co/512x512/png?text=Achievement";
@@ -48,7 +66,7 @@ const defaultAchievementImagePlaceholder =
 async function resolveImageWithDependencies(
   image: string | null,
   imageUpload: CreateAchievementRequest["imageUpload"],
-  bucketClient: BucketAchievementClient,
+  bucketClient: Pick<BucketAchievementClient, "uploadAchievementImage">,
   imageId?: string,
 ): Promise<string | null> {
   if (!imageUpload) {
@@ -60,6 +78,32 @@ async function resolveImageWithDependencies(
 
 function isDirectImageUrl(image: string): boolean {
   return /^https?:\/\//i.test(image);
+}
+
+async function resolveBadgeImageWithDependencies(
+  image: string | null | undefined,
+  imageUpload:
+    | CreateBadgeRequest["imageUpload"]
+    | UpdateBadgeRequest["imageUpload"],
+  bucketClient: Pick<BucketAchievementClient, "uploadBadgeImage">,
+  imageId?: string,
+): Promise<string | null | undefined> {
+  if (imageUpload) {
+    return bucketClient.uploadBadgeImage(imageUpload, imageId);
+  }
+
+  return image;
+}
+
+async function resolveBadgeImageUrlWithDependencies(
+  image: string,
+  bucketClient: BadgeBucketReadDependencies,
+): Promise<string> {
+  if (isDirectImageUrl(image)) {
+    return image;
+  }
+
+  return bucketClient.getBadgeImageUrl(image.trim());
 }
 
 function resolveStoredAchievementImageId(image: string): string | null {
@@ -74,7 +118,7 @@ function resolveStoredAchievementImageId(image: string): string | null {
 
 async function resolveAchievementImageUrlWithDependencies(
   image: string | null,
-  bucketClient: BucketAchievementClient,
+  bucketClient: AchievementBucketReadDependencies,
 ): Promise<string | null> {
   if (!image) {
     return null;
@@ -97,7 +141,7 @@ async function enrichAchievementLikeImageWithDependencies<
   TAchievement extends Achievement,
 >(
   achievement: TAchievement,
-  bucketClient: BucketAchievementClient,
+  bucketClient: AchievementBucketReadDependencies,
 ): Promise<TAchievement> {
   return {
     ...achievement,
@@ -108,10 +152,23 @@ async function enrichAchievementLikeImageWithDependencies<
   };
 }
 
+async function enrichBadgeImageWithDependencies(
+  badge: Badge,
+  bucketClient: BadgeBucketReadDependencies,
+): Promise<Badge> {
+  return {
+    ...badge,
+    image: await resolveBadgeImageUrlWithDependencies(
+      badge.image,
+      bucketClient,
+    ),
+  };
+}
+
 async function resolveCreateImageWithDependencies(
   image: string | null,
   imageUpload: CreateAchievementRequest["imageUpload"],
-  bucketClient: BucketAchievementClient,
+  bucketClient: Pick<BucketAchievementClient, "uploadAchievementImage">,
 ): Promise<string> {
   const resolvedImage = await resolveImageWithDependencies(
     image,
@@ -124,7 +181,7 @@ async function resolveCreateImageWithDependencies(
 
 async function invalidateChannelCacheIfNeeded(
   channelId: string | null,
-  notificationClient: NotificationCacheClient,
+  notificationClient: NotificationDependencies,
   message: string,
 ): Promise<void> {
   if (!channelId) {
@@ -140,7 +197,11 @@ async function invalidateChannelCacheIfNeeded(
 
 async function createAchievementWithDependencies(
   payload: CreateAchievementRequest,
-  dependencies: AchievementImageServiceDependencies,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "createAchievement">;
+    notificationClient: NotificationDependencies;
+    bucketClient: AchievementBucketWriteDependencies;
+  },
 ): Promise<Achievement> {
   const payloadWithStoredImage = {
     ...payload,
@@ -178,10 +239,10 @@ async function createAchievement(
 
 async function getAchievementByIdWithDependencies(
   achievementId: string,
-  dependencies: Pick<
-    AchievementImageServiceDependencies,
-    "dbClient" | "bucketClient"
-  >,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getAchievementById">;
+    bucketClient: AchievementBucketReadDependencies;
+  },
 ): Promise<Achievement> {
   const achievement =
     await dependencies.dbClient.getAchievementById(achievementId);
@@ -201,10 +262,10 @@ async function getAchievementById(achievementId: string): Promise<Achievement> {
 
 async function getAchievementsByChannelIdWithDependencies(
   channelId: string,
-  dependencies: Pick<
-    AchievementImageServiceDependencies,
-    "dbClient" | "bucketClient"
-  >,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getAchievementsByChannelId">;
+    bucketClient: AchievementBucketReadDependencies;
+  },
 ): Promise<Achievement[]> {
   const achievements =
     await dependencies.dbClient.getAchievementsByChannelId(channelId);
@@ -228,12 +289,10 @@ async function getAchievementsByChannelId(
   });
 }
 
-async function getPublicAchievementsWithDependencies(
-  dependencies: Pick<
-    AchievementImageServiceDependencies,
-    "dbClient" | "bucketClient"
-  >,
-): Promise<Achievement[]> {
+async function getPublicAchievementsWithDependencies(dependencies: {
+  dbClient: Pick<DbAchievementClient, "getPublicAchievements">;
+  bucketClient: AchievementBucketReadDependencies;
+}): Promise<Achievement[]> {
   const achievements = await dependencies.dbClient.getPublicAchievements();
 
   return Promise.all(
@@ -256,7 +315,9 @@ async function getPublicAchievements(): Promise<Achievement[]> {
 async function getAchievementLeaderboardByChannelIdWithDependencies(
   channelId: string,
   query: AchievementLeaderboardQuery,
-  dependencies: Pick<AchievementServiceDependencies, "dbClient">,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getAchievementLeaderboardByChannelId">;
+  },
 ): Promise<AchievementLeaderboardEntry[]> {
   return dependencies.dbClient.getAchievementLeaderboardByChannelId(
     channelId,
@@ -279,10 +340,10 @@ async function getAchievementLeaderboardByChannelId(
 
 async function getAchievementsByUserIdWithDependencies(
   userId: string,
-  dependencies: Pick<
-    AchievementImageServiceDependencies,
-    "dbClient" | "bucketClient"
-  >,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getAchievementsByUserId">;
+    bucketClient: AchievementBucketReadDependencies;
+  },
 ): Promise<UserAchievement[]> {
   const achievements =
     await dependencies.dbClient.getAchievementsByUserId(userId);
@@ -309,10 +370,10 @@ async function getAchievementsByUserId(
 async function getAchievementsByUserIdAndChannelIdWithDependencies(
   userId: string,
   channelId: string,
-  dependencies: Pick<
-    AchievementImageServiceDependencies,
-    "dbClient" | "bucketClient"
-  >,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getAchievementsByUserIdAndChannelId">;
+    bucketClient: AchievementBucketReadDependencies;
+  },
 ): Promise<UserAchievement[]> {
   const achievements =
     await dependencies.dbClient.getAchievementsByUserIdAndChannelId(
@@ -344,6 +405,120 @@ async function getAchievementsByUserIdAndChannelId(
   );
 }
 
+async function getUserBadgesWithDependencies(
+  userId: string,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getUserBadges">;
+    bucketClient: BadgeBucketReadDependencies;
+  },
+): Promise<Badge[]> {
+  const badges = await dependencies.dbClient.getUserBadges(userId);
+
+  return Promise.all(
+    badges.map((badge) =>
+      enrichBadgeImageWithDependencies(badge, dependencies.bucketClient),
+    ),
+  );
+}
+
+async function getUserBadges(userId: string): Promise<Badge[]> {
+  return getUserBadgesWithDependencies(userId, {
+    bucketClient: bucketAchievementClient,
+    dbClient: dbAchievementClient,
+  });
+}
+
+async function getChannelBadgeWithDependencies(
+  channelId: string,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "getChannelBadge">;
+    bucketClient: BadgeBucketReadDependencies;
+  },
+): Promise<Badge> {
+  const badge = await dependencies.dbClient.getChannelBadge(channelId);
+
+  return enrichBadgeImageWithDependencies(badge, dependencies.bucketClient);
+}
+
+async function getChannelBadge(channelId: string): Promise<Badge> {
+  return getChannelBadgeWithDependencies(channelId, {
+    bucketClient: bucketAchievementClient,
+    dbClient: dbAchievementClient,
+  });
+}
+
+async function createChannelBadgeWithDependencies(
+  channelId: string,
+  payload: CreateBadgeRequest,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "createChannelBadge">;
+    bucketClient: BadgeBucketWriteDependencies;
+  },
+): Promise<Badge> {
+  const resolvedImage =
+    (await resolveBadgeImageWithDependencies(
+      payload.image,
+      payload.imageUpload,
+      dependencies.bucketClient,
+      channelId,
+    )) ?? null;
+  const payloadWithStoredImage = {
+    ...payload,
+    image: resolvedImage,
+  };
+  const badge = await dependencies.dbClient.createChannelBadge(
+    channelId,
+    payloadWithStoredImage,
+  );
+
+  return enrichBadgeImageWithDependencies(badge, dependencies.bucketClient);
+}
+
+async function createChannelBadge(
+  channelId: string,
+  payload: CreateBadgeRequest,
+): Promise<Badge> {
+  return createChannelBadgeWithDependencies(channelId, payload, {
+    bucketClient: bucketAchievementClient,
+    dbClient: dbAchievementClient,
+  });
+}
+
+async function updateChannelBadgeWithDependencies(
+  channelId: string,
+  payload: UpdateBadgeRequest,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "updateChannelBadge">;
+    bucketClient: BadgeBucketWriteDependencies;
+  },
+): Promise<Badge> {
+  const payloadWithStoredImage = {
+    ...payload,
+    image: await resolveBadgeImageWithDependencies(
+      payload.image,
+      payload.imageUpload,
+      dependencies.bucketClient,
+      channelId,
+    ),
+  };
+  const badge = await dependencies.dbClient.updateChannelBadge(
+    channelId,
+    payloadWithStoredImage,
+  );
+
+  return enrichBadgeImageWithDependencies(badge, dependencies.bucketClient);
+}
+
+async function updateChannelBadge(
+  channelId: string,
+  payload: UpdateBadgeRequest,
+): Promise<Badge> {
+  return updateChannelBadgeWithDependencies(channelId, payload, {
+    bucketClient: bucketAchievementClient,
+    dbClient: dbAchievementClient,
+  });
+}
+
 async function generateAchievementSuggestionWithDependencies(
   payload: AiSuggestionRequest,
   dependencies: AchievementAiServiceDependencies,
@@ -362,7 +537,11 @@ async function generateAchievementSuggestion(
 async function updateAchievementWithDependencies(
   achievementId: string,
   payload: UpdateAchievementRequest,
-  dependencies: AchievementImageServiceDependencies,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "updateAchievement">;
+    notificationClient: NotificationDependencies;
+    bucketClient: AchievementBucketWriteDependencies;
+  },
 ): Promise<Achievement> {
   const payloadWithStoredImage = {
     ...payload,
@@ -403,7 +582,10 @@ async function updateAchievement(
 
 async function deleteAchievementWithDependencies(
   achievementId: string,
-  dependencies: AchievementServiceDependencies,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "deleteAchievement">;
+    notificationClient: NotificationDependencies;
+  },
 ): Promise<Achievement> {
   const achievement =
     await dependencies.dbClient.deleteAchievement(achievementId);
@@ -429,7 +611,10 @@ async function deleteAchievement(achievementId: string): Promise<Achievement> {
 
 async function deactivateAchievementWithDependencies(
   achievementId: string,
-  dependencies: AchievementServiceDependencies,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "deactivateAchievement">;
+    notificationClient: NotificationDependencies;
+  },
 ): Promise<Achievement> {
   const achievement =
     await dependencies.dbClient.deactivateAchievement(achievementId);
@@ -457,7 +642,10 @@ async function deactivateAchievement(
 
 async function activateAchievementWithDependencies(
   achievementId: string,
-  dependencies: AchievementServiceDependencies,
+  dependencies: {
+    dbClient: Pick<DbAchievementClient, "activateAchievement">;
+    notificationClient: NotificationDependencies;
+  },
 ): Promise<Achievement> {
   const achievement =
     await dependencies.dbClient.activateAchievement(achievementId);
@@ -486,11 +674,15 @@ async function activateAchievement(
 export {
   activateAchievement,
   activateAchievementWithDependencies,
+  createChannelBadge,
+  createChannelBadgeWithDependencies,
   createAchievement,
   createAchievementWithDependencies,
   defaultAchievementImagePlaceholder,
   generateAchievementSuggestion,
   generateAchievementSuggestionWithDependencies,
+  getChannelBadge,
+  getChannelBadgeWithDependencies,
   getAchievementLeaderboardByChannelId,
   getAchievementLeaderboardByChannelIdWithDependencies,
   getAchievementById,
@@ -501,12 +693,16 @@ export {
   getAchievementsByUserIdAndChannelId,
   getAchievementsByUserIdAndChannelIdWithDependencies,
   getAchievementsByUserIdWithDependencies,
+  getUserBadges,
+  getUserBadgesWithDependencies,
   getPublicAchievements,
   getPublicAchievementsWithDependencies,
   deactivateAchievement,
   deactivateAchievementWithDependencies,
   deleteAchievement,
   deleteAchievementWithDependencies,
+  updateChannelBadge,
+  updateChannelBadgeWithDependencies,
   updateAchievement,
   updateAchievementWithDependencies,
 };

@@ -1,20 +1,25 @@
 import express from "express";
 import {
   activateAchievementHandler,
+  createChannelBadgeHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
   generateAchievementSuggestionHandler,
+  getChannelBadgeHandler,
   getAchievementLeaderboardByChannelIdHandler,
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
   getAchievementsByUserIdHandler,
   getAchievementsByUserIdAndChannelIdHandler,
+  getUserBadgesHandler,
   getPublicAchievementsHandler,
+  updateChannelBadgeHandler,
   updateAchievementHandler,
 } from "./controllers/achievementController";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import { achievementRoutes } from "./routes/achievementRoutes";
+import { badgeRoutes } from "./routes/badgeRoutes";
 import { config } from "./config/environment";
 
 const app = express();
@@ -88,6 +93,15 @@ app.use(
     getAchievementsByUserIdAndChannelIdHandler,
     getPublicAchievementsHandler,
     updateAchievementHandler,
+  }),
+);
+app.use(
+  "/badges",
+  badgeRoutes({
+    createChannelBadgeHandler,
+    getChannelBadgeHandler,
+    getUserBadgesHandler,
+    updateChannelBadgeHandler,
   }),
 );
 

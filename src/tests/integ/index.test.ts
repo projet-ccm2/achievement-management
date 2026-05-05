@@ -4,16 +4,20 @@ import { app } from "../../app";
 import { config } from "../../config/environment";
 import {
   activateAchievement,
+  createChannelBadge,
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
   generateAchievementSuggestion,
+  getChannelBadge,
   getAchievementLeaderboardByChannelId,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserIdAndChannelId,
   getAchievementsByUserId,
+  getUserBadges,
   getPublicAchievements,
+  updateChannelBadge,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -29,22 +33,29 @@ jest.mock("../../utils/logger", () => ({
 
 jest.mock("../../services/achievementService", () => ({
   activateAchievement: jest.fn(),
+  createChannelBadge: jest.fn(),
   createAchievement: jest.fn(),
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
   generateAchievementSuggestion: jest.fn(),
+  getChannelBadge: jest.fn(),
   getAchievementLeaderboardByChannelId: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
   getAchievementsByUserIdAndChannelId: jest.fn(),
   getAchievementsByUserId: jest.fn(),
+  getUserBadges: jest.fn(),
   getPublicAchievements: jest.fn(),
+  updateChannelBadge: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
 describe("Express App", () => {
   const activateAchievementMock = activateAchievement as jest.MockedFunction<
     typeof activateAchievement
+  >;
+  const createChannelBadgeMock = createChannelBadge as jest.MockedFunction<
+    typeof createChannelBadge
   >;
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
@@ -53,6 +64,9 @@ describe("Express App", () => {
     generateAchievementSuggestion as jest.MockedFunction<
       typeof generateAchievementSuggestion
     >;
+  const getChannelBadgeMock = getChannelBadge as jest.MockedFunction<
+    typeof getChannelBadge
+  >;
   const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
     typeof getAchievementById
   >;
@@ -74,6 +88,9 @@ describe("Express App", () => {
     getAchievementsByUserIdAndChannelId as jest.MockedFunction<
       typeof getAchievementsByUserIdAndChannelId
     >;
+  const getUserBadgesMock = getUserBadges as jest.MockedFunction<
+    typeof getUserBadges
+  >;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
   const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
@@ -81,6 +98,9 @@ describe("Express App", () => {
   >;
   const updateAchievementMock = updateAchievement as jest.MockedFunction<
     typeof updateAchievement
+  >;
+  const updateChannelBadgeMock = updateChannelBadge as jest.MockedFunction<
+    typeof updateChannelBadge
   >;
 
   beforeEach(() => {
@@ -1289,6 +1309,134 @@ describe("Express App", () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /badges/user/:userId", () => {
+    it("should return badges owned by the user", async () => {
+      getUserBadgesMock.mockResolvedValue([
+        {
+          id: "badge-1",
+          title: "Viewer legend",
+          image: "https://bucket.test/badge-1",
+        },
+      ]);
+
+      const response = await request(app).get("/badges/user/user-1");
+
+      expect(response.status).toBe(200);
+      expect(getUserBadgesMock).toHaveBeenCalledWith("user-1");
+      expect(response.body).toEqual([
+        {
+          id: "badge-1",
+          title: "Viewer legend",
+          image: "https://bucket.test/badge-1",
+        },
+      ]);
+    });
+  });
+
+  describe("GET /badges/channel/:channelId", () => {
+    it("should return the badge linked to the channel", async () => {
+      getChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app).get("/badges/channel/channel-1");
+
+      expect(response.status).toBe(200);
+      expect(getChannelBadgeMock).toHaveBeenCalledWith("channel-1");
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+  });
+
+  describe("POST /badges/channel/:channelId", () => {
+    it("should create a channel badge", async () => {
+      createChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app)
+        .post("/badges/channel/channel-1")
+        .send({
+          title: " Channel badge ",
+          image: "https://cdn.test/badge.png",
+        });
+
+      expect(response.status).toBe(201);
+      expect(createChannelBadgeMock).toHaveBeenCalledWith("channel-1", {
+        title: "Channel badge",
+        image: "https://cdn.test/badge.png",
+        imageUpload: null,
+      });
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+
+    it("should reject invalid badge create payloads", async () => {
+      const response = await request(app)
+        .post("/badges/channel/channel-1")
+        .send({
+          title: "Channel badge",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "image or imageUpload is required",
+      });
+      expect(createChannelBadgeMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("PUT /badges/channel/:channelId", () => {
+    it("should update a channel badge", async () => {
+      updateChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Updated badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app)
+        .put("/badges/channel/channel-1")
+        .send({
+          title: " Updated badge ",
+        });
+
+      expect(response.status).toBe(200);
+      expect(updateChannelBadgeMock).toHaveBeenCalledWith("channel-1", {
+        title: "Updated badge",
+        imageUpload: null,
+      });
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Updated badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+
+    it("should reject empty badge update payloads", async () => {
+      const response = await request(app)
+        .put("/badges/channel/channel-1")
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "At least one of title, image or imageUpload is required",
+      });
+      expect(updateChannelBadgeMock).not.toHaveBeenCalled();
     });
   });
 });

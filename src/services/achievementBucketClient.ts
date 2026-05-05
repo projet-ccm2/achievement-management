@@ -12,6 +12,11 @@ interface BucketAchievementClient {
     elementId?: string,
   ): Promise<string>;
   getAchievementImageUrl(imageId: string): Promise<string>;
+  uploadBadgeImage(
+    imageUpload: AchievementImageUpload,
+    elementId?: string,
+  ): Promise<string>;
+  getBadgeImageUrl(imageId: string): Promise<string>;
 }
 /* eslint-enable no-unused-vars */
 
@@ -58,8 +63,9 @@ function extractAchievementImageIdFromKey(key: string): string | null {
 }
 
 class HttpBucketAchievementClient implements BucketAchievementClient {
-  public async uploadAchievementImage(
+  private async uploadImage(
     imageUpload: AchievementImageUpload,
+    typeImage: "achievement" | "badge",
     elementId: string = randomUUID(),
   ): Promise<string> {
     const body = new FormData();
@@ -69,7 +75,7 @@ class HttpBucketAchievementClient implements BucketAchievementClient {
     });
 
     body.append("image", imageBlob, imageUpload.fileName);
-    body.append("typeImage", "achievement");
+    body.append("typeImage", typeImage);
     body.append("elementId", elementId);
 
     const response = await timedFetch({
@@ -138,9 +144,12 @@ class HttpBucketAchievementClient implements BucketAchievementClient {
     );
   }
 
-  public async getAchievementImageUrl(imageId: string): Promise<string> {
+  private async getImageUrl(
+    imageId: string,
+    typeImage: "achievement" | "badge",
+  ): Promise<string> {
     const response = await timedFetch({
-      url: `${config.bucketManagerUrl}/bucket/image/get?typeImage=achievement&elementId=${encodeURIComponent(
+      url: `${config.bucketManagerUrl}/bucket/image/get?typeImage=${typeImage}&elementId=${encodeURIComponent(
         imageId,
       )}`,
       method: "GET",
@@ -176,6 +185,28 @@ class HttpBucketAchievementClient implements BucketAchievementClient {
     }
 
     return bodyRecord.url;
+  }
+
+  public async uploadAchievementImage(
+    imageUpload: AchievementImageUpload,
+    elementId?: string,
+  ): Promise<string> {
+    return this.uploadImage(imageUpload, "achievement", elementId);
+  }
+
+  public async getAchievementImageUrl(imageId: string): Promise<string> {
+    return this.getImageUrl(imageId, "achievement");
+  }
+
+  public async uploadBadgeImage(
+    imageUpload: AchievementImageUpload,
+    elementId?: string,
+  ): Promise<string> {
+    return this.uploadImage(imageUpload, "badge", elementId);
+  }
+
+  public async getBadgeImageUrl(imageId: string): Promise<string> {
+    return this.getImageUrl(imageId, "badge");
   }
 }
 

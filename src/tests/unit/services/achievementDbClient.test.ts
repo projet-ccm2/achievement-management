@@ -78,6 +78,19 @@ function buildDbAchievementResponse(overrides: Record<string, unknown> = {}): {
   };
 }
 
+function buildDbBadgeResponse(overrides: Record<string, unknown> = {}): {
+  id: string;
+  title: string;
+  img: string;
+} {
+  return {
+    id: "badge-1",
+    title: "Channel badge",
+    img: "badge-image-1",
+    ...overrides,
+  };
+}
+
 describe("achievementDbClient", () => {
   const originalFetch = global.fetch;
 
@@ -257,6 +270,101 @@ describe("achievementDbClient", () => {
       }),
     );
     expect(achievement.id).toBe("achievement-1");
+  });
+
+  it("should get user badges through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse([buildDbBadgeResponse()]),
+    );
+
+    const client = new HttpDbAchievementClient();
+    const badges = await client.getUserBadges("user-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/users/user-1/badges",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+    expect(badges).toEqual([
+      {
+        id: "badge-1",
+        title: "Channel badge",
+        image: "badge-image-1",
+      },
+    ]);
+  });
+
+  it("should get the channel badge through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse(buildDbBadgeResponse()),
+    );
+
+    const client = new HttpDbAchievementClient();
+    const badge = await client.getChannelBadge("channel-1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/channels/channel-1/badge",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+    expect(badge).toEqual({
+      id: "badge-1",
+      title: "Channel badge",
+      image: "badge-image-1",
+    });
+  });
+
+  it("should create a channel badge through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse(buildDbBadgeResponse()),
+    );
+
+    const client = new HttpDbAchievementClient();
+    const badge = await client.createChannelBadge("channel-1", {
+      title: "Channel badge",
+      image: "badge-image-1",
+      imageUpload: null,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/badges",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          title: "Channel badge",
+          img: "badge-image-1",
+          channelId: "channel-1",
+        }),
+      }),
+    );
+    expect(badge.id).toBe("badge-1");
+  });
+
+  it("should update a channel badge through the DB service", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      mockJsonResponse(buildDbBadgeResponse({ title: "Updated badge" })),
+    );
+
+    const client = new HttpDbAchievementClient();
+    const badge = await client.updateChannelBadge("channel-1", {
+      title: "Updated badge",
+      image: "badge-image-2",
+      imageUpload: null,
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "http://db-service.test/channels/channel-1/badge",
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify({
+          title: "Updated badge",
+          img: "badge-image-2",
+        }),
+      }),
+    );
+    expect(badge.title).toBe("Updated badge");
   });
 
   it("should send a non-empty fallback type data for message achievements", async () => {

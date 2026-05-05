@@ -3,6 +3,7 @@ import {
   Achievement,
   AchievementLeaderboardEntry,
   AchievementSuggestion,
+  Badge,
   UserAchievement,
 } from "../models/achievement";
 
@@ -86,9 +87,22 @@ interface AchievementLeaderboardQuery {
   sort?: "xp" | "completed";
 }
 
+interface CreateBadgeRequest {
+  title: string;
+  image: string | null;
+  imageUpload?: AchievementImageUpload | null;
+}
+
+interface UpdateBadgeRequest {
+  title?: string;
+  image?: string | null;
+  imageUpload?: AchievementImageUpload | null;
+}
+
 type CreateAchievementResponse = Achievement;
 type UpdateAchievementResponse = Achievement;
 type AiSuggestionResponse = AchievementSuggestion;
+type BadgeResponse = Badge;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -283,6 +297,61 @@ function parseAiSuggestionRequest(body: unknown): AiSuggestionRequest {
 
   return {
     prompt: readRequiredString(body.prompt, "prompt"),
+  };
+}
+
+function parseCreateBadgeRequest(body: unknown): CreateBadgeRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  const imageUpload = readImageUpload(body.imageUpload);
+  const image = readOptionalImage(body.image);
+
+  if (!image && !imageUpload) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "image or imageUpload is required",
+    );
+  }
+
+  return {
+    title: readRequiredString(body.title, "title"),
+    image,
+    imageUpload,
+  };
+}
+
+function parseUpdateBadgeRequest(body: unknown): UpdateBadgeRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  const imageUpload = readImageUpload(body.imageUpload);
+  const hasTitle = body.title !== undefined;
+  const hasImage = body.image !== undefined;
+
+  if (!hasTitle && !hasImage && !imageUpload) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "At least one of title, image or imageUpload is required",
+    );
+  }
+
+  return {
+    title: hasTitle ? readRequiredString(body.title, "title") : undefined,
+    image: hasImage ? readOptionalImage(body.image) : undefined,
+    imageUpload,
   };
 }
 
@@ -657,16 +726,48 @@ function mapDbAchievementLeaderboardResponse(
   });
 }
 
+function mapDbBadgeToResponse(body: unknown): Badge {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid badge payload",
+    );
+  }
+
+  return {
+    id: readRequiredString(body.id, "id"),
+    title: readRequiredString(body.title, "title"),
+    image: readRequiredString(body.img, "img"),
+  };
+}
+
+function mapDbBadgesToResponse(body: unknown): Badge[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid badge list payload",
+    );
+  }
+
+  return body.map((badge) => mapDbBadgeToResponse(badge));
+}
+
 export {
   mapDbAchievementLeaderboardResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbBadgeToResponse,
+  mapDbBadgesToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
   mapAiSuggestionToResponse,
   parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
+  parseCreateBadgeRequest,
   parseCreateAchievementRequest,
+  parseUpdateBadgeRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
 };
@@ -674,9 +775,12 @@ export type {
   AchievementLeaderboardQuery,
   AiSuggestionRequest,
   AiSuggestionResponse,
+  BadgeResponse,
   CreateAchievementRequest,
+  CreateBadgeRequest,
   AchievementImageUpload,
   CreateAchievementResponse,
+  UpdateBadgeRequest,
   UpdateAchievementRequest,
   UpdateAchievementResponse,
 };

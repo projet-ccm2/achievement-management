@@ -203,6 +203,73 @@ describe("achievementBucketClient", () => {
     );
   });
 
+  it("should upload a badge image and return the image id", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        imageId: "badge-1",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(
+      client.uploadBadgeImage(
+        {
+          fileName: "badge.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+        "badge-1",
+      ),
+    ).resolves.toBe("badge-1");
+
+    expect(timedFetch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: "http://bucket-manager.test/bucket/image/insert",
+        method: "POST",
+        serviceName: "bucket-manager",
+      }),
+    );
+  });
+
+  it("should retrieve a signed badge image url", async () => {
+    const { timedFetch } = require("../../../utils/http");
+    const response = new Response(
+      JSON.stringify({
+        url: "https://bucket.test/signed-badge",
+      }),
+      {
+        status: 200,
+        headers: {
+          "content-type": "application/json",
+        },
+      },
+    );
+
+    timedFetch.mockResolvedValue(response);
+
+    const {
+      HttpBucketAchievementClient,
+    } = require("../../../services/achievementBucketClient");
+    const client = new HttpBucketAchievementClient();
+
+    await expect(client.getBadgeImageUrl("badge-1")).resolves.toBe(
+      "https://bucket.test/signed-badge",
+    );
+  });
+
   it("should reject invalid base64 content", async () => {
     const {
       HttpBucketAchievementClient,

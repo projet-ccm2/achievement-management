@@ -48,11 +48,18 @@ interface AchievementLeaderboardEntry {
   completed: number;
 }
 
+interface Badge {
+  id: string;
+  title: string;
+  image: string;
+}
+
 export type {
   Achievement,
   AchievementLeaderboardEntry,
   AchievementSuggestion,
   AchievementType,
   AchievementUserState,
+  Badge,
   UserAchievement,
 };
