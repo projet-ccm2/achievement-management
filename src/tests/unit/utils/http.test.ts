@@ -3,6 +3,7 @@ import { ApplicationError } from "../../../middlewares/errorHandler";
 import {
   extractAudience,
   fetchIdentityToken,
+  generateVpcToken,
   timedFetch,
   tokenCache,
 } from "../../../utils/http";
@@ -158,7 +159,37 @@ describe("timedFetch", () => {
       process.env.K_SERVICE = "achievement-management-int";
     });
 
-    it("should inject Authorization header when running on Cloud Run", async () => {
+    it("should inject Authorization and X-VPC-Token headers when running on Cloud Run", async () => {
+      process.env.JWT_SECRET = "test-secret";
+      const mockResponse = { ok: true } as Response;
+      const tokenResponse = {
+        ok: true,
+        text: jest.fn().mockResolvedValue("fake-token"),
+      } as unknown as Response;
+
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce(tokenResponse)
+        .mockResolvedValueOnce(mockResponse);
+
+      await timedFetch({
+        url: "http://service.test/resource",
+        method: "GET",
+        serviceName: "service-test",
+        errorCode: "service_error",
+        networkErrorMessage: "network failed",
+        timeoutErrorMessage: "request timed out",
+      });
+
+      const serviceCall = (global.fetch as jest.Mock).mock.calls[1];
+      expect(serviceCall[1]?.headers).toMatchObject({
+        Authorization: "Bearer fake-token",
+        "X-VPC-Token": expect.any(String),
+      });
+
+      delete process.env.JWT_SECRET;
+    });
+
+    it("should inject only Authorization header when JWT_SECRET is absent", async () => {
       const mockResponse = { ok: true } as Response;
       const tokenResponse = {
         ok: true,
@@ -182,9 +213,11 @@ describe("timedFetch", () => {
       expect(serviceCall[1]?.headers).toMatchObject({
         Authorization: "Bearer fake-token",
       });
+      expect(serviceCall[1]?.headers).not.toHaveProperty("X-VPC-Token");
     });
 
-    it("should preserve existing headers when injecting Authorization", async () => {
+    it("should preserve existing headers when injecting auth headers", async () => {
+      process.env.JWT_SECRET = "test-secret";
       const mockResponse = { ok: true } as Response;
       const tokenResponse = {
         ok: true,
@@ -213,7 +246,10 @@ describe("timedFetch", () => {
       expect(serviceCall[1]?.headers).toMatchObject({
         "content-type": "application/json",
         Authorization: "Bearer fake-token",
+        "X-VPC-Token": expect.any(String),
       });
+
+      delete process.env.JWT_SECRET;
     });
 
     it("should throw a 502 ApplicationError when identity token fetch fails", async () => {
@@ -342,5 +378,30 @@ describe("fetchIdentityToken", () => {
         "Failed to fetch identity token for audience https://service.example.com",
       ),
     );
+  });
+});
+
+describe("generateVpcToken", () => {
+  afterEach(() => {
+    delete process.env.JWT_SECRET;
+  });
+
+  it("should return null when JWT_SECRET is not set", () => {
+    expect(generateVpcToken()).toBeNull();
+  });
+
+  it("should return a JWT string when JWT_SECRET is set", () => {
+    process.env.JWT_SECRET = "test-secret";
+    const token = generateVpcToken();
+    expect(typeof token).toBe("string");
+    expect(token).not.toBeNull();
+  });
+
+  it("should produce a token with aud vpc-db-gateway", () => {
+    process.env.JWT_SECRET = "test-secret";
+    const token = generateVpcToken() as string;
+    const [, payloadB64] = token.split(".");
+    const payload = JSON.parse(Buffer.from(payloadB64, "base64").toString());
+    expect(payload.aud).toBe("vpc-db-gateway");
   });
 });
