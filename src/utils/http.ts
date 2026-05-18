@@ -1,6 +1,19 @@
 /* global AbortController, RequestInit, Response, URL, clearTimeout, fetch, process, setTimeout */
+import jwt from "jsonwebtoken";
 import { ApplicationError } from "../middlewares/errorHandler";
 import { logger } from "./logger";
+
+const VPC_AUDIENCE = "vpc-db-gateway";
+
+function generateVpcToken(): string | null {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return null;
+  return jwt.sign(
+    { aud: VPC_AUDIENCE, iat: Math.floor(Date.now() / 1000) },
+    secret,
+    { expiresIn: 3600 },
+  );
+}
 
 interface TimedFetchOptions {
   url: string;
@@ -63,15 +76,17 @@ async function timedFetch(options: TimedFetchOptions): Promise<Response> {
 
     if (isCloudRun()) {
       const audience = extractAudience(options.url);
-      const token = await fetchIdentityToken(audience);
+      const idToken = await fetchIdentityToken(audience);
+      const vpcToken = generateVpcToken();
       const existingHeaders =
         (init.headers as Record<string, string> | undefined) ?? {};
+      const authHeaders: Record<string, string> = {
+        Authorization: `Bearer ${idToken}`,
+      };
+      if (vpcToken) authHeaders["X-VPC-Token"] = vpcToken;
       init = {
         ...init,
-        headers: {
-          ...existingHeaders,
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { ...existingHeaders, ...authHeaders },
       };
     }
 
@@ -116,4 +131,10 @@ async function timedFetch(options: TimedFetchOptions): Promise<Response> {
   }
 }
 
-export { timedFetch, fetchIdentityToken, extractAudience, tokenCache };
+export {
+  timedFetch,
+  fetchIdentityToken,
+  extractAudience,
+  generateVpcToken,
+  tokenCache,
+};
