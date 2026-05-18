@@ -27,8 +27,8 @@ jobs:
       artifact-registry-repository: "achievement-management-docker-int"
       environment: integration
       cloud-run-service-name: achievement-management-int
-      service_type: "back_prive"
-      required_env_vars: "INT_DB_SERVICE_URL,INT_IA_SERVICE_URL,INT_BUCKET_MANAGER_URL,INT_NOTIFICATION_HANDLER_URL,INT_ALLOWED_ORIGINS,INT_FRONT_URL,INT_TWITCH_EXTENSION_IDS"
+      service_type: "bff"
+      required_env_vars: "DB_SERVICE_URL,IA_SERVICE_URL,BUCKET_MANAGER_URL,NOTIFICATION_HANDLER_URL,ALLOWED_ORIGINS,FRONT_URL,TWITCH_EXTENSION_IDS"
     secrets:
       GCP_SA_KEY: ${{ secrets.INT_GCP_SA_KEY }}
       GCP_PROJECT_ID: ${{ secrets.INT_GCP_PROJECT_ID }}

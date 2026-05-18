@@ -22,7 +22,7 @@ jobs:
       environment: production
       cloud-run-service-name: achievement-management-prod
       service_type: "back_prive"
-      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_BUCKET_MANAGER_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_ALLOWED_ORIGINS,PROD_FRONT_URL,PROD_TWITCH_EXTENSION_IDS"
+      required_env_vars: "DB_SERVICE_URL,IA_SERVICE_URL,BUCKET_MANAGER_URL,NOTIFICATION_HANDLER_URL,ALLOWED_ORIGINS,FRONT_URL,TWITCH_EXTENSION_IDS"
 
     secrets:
       GCP_SA_KEY: ${{ secrets.PROD_GCP_SA_KEY }}
