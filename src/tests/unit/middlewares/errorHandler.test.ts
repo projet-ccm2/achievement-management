@@ -40,6 +40,32 @@ describe("errorHandler", () => {
     });
   });
 
+  it("should return application errors with details", () => {
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    errorHandler(
+      new ApplicationError(422, "business_rule", "rule violated", {
+        field: "email",
+      }),
+      {
+        method: "POST",
+        originalUrl: "/achievements",
+      } as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(response.status).toHaveBeenCalledWith(422);
+    expect(response.json).toHaveBeenCalledWith({
+      code: "business_rule",
+      message: "rule violated",
+      details: { field: "email" },
+    });
+  });
+
   it("should log and return generic errors", () => {
     const response = {
       status: jest.fn().mockReturnThis(),

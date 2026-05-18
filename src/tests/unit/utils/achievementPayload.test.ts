@@ -1,10 +1,12 @@
 /* global describe, expect, it */
 import {
+  mapDbAchievementLeaderboardResponse,
   mapAiSuggestionToResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
   parseCreateAchievementRequest,
   parseUpdateAchievementRequest,
@@ -15,11 +17,11 @@ import { ApplicationError } from "../../../middlewares/errorHandler";
 describe("achievementPayload", () => {
   it("should expose the supported trigger labels", () => {
     expect(supportedTriggerLabels).toEqual([
-      "message",
-      "message_content",
-      "channel_point_cost",
-      "redeem_channel_point",
-      "api_caller",
+      "countMessage",
+      "contentMessage",
+      "countCostChannelPoint",
+      "countRedeemChannelPoint",
+      "apicaller",
     ]);
   });
 
@@ -37,7 +39,7 @@ describe("achievementPayload", () => {
         image: " https://image.test/file.png ",
         channelId: " channel-1 ",
         type: {
-          label: "Redeem Channel Point",
+          label: "Count Redeem Channel Point",
           data: " reward ",
         },
       }),
@@ -46,15 +48,51 @@ describe("achievementPayload", () => {
       description: "Desc",
       goal: 5,
       reward: 0,
-      label: "custom",
+      label: " ",
       public: true,
       active: true,
       secret: false,
       image: "https://image.test/file.png",
+      imageUpload: null,
       channelId: "channel-1",
       type: {
-        label: "redeem_channel_point",
+        label: "countRedeemChannelPoint",
         data: "reward",
+      },
+    });
+  });
+
+  it("should default create label to a single space when omitted", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: " ",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      imageUpload: null,
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: null,
       },
     });
   });
@@ -71,7 +109,7 @@ describe("achievementPayload", () => {
         secret: false,
         image: null,
         type: {
-          label: "message-content",
+          label: "Content Message",
           data: "updated",
         },
       }),
@@ -85,9 +123,90 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
+      },
+    });
+  });
+
+  it("should parse a valid image upload payload", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        image: null,
+        imageUpload: {
+          fileName: "achievement.png",
+          mimeType: "image/png",
+          contentBase64: "dGVzdA==",
+        },
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: " ",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      imageUpload: {
+        fileName: "achievement.png",
+        mimeType: "image/png",
+        contentBase64: "dGVzdA==",
+      },
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: null,
+      },
+    });
+  });
+
+  it("should preserve provided type.data for countMessage payloads", () => {
+    expect(
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 5,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: "keep-this",
+        },
+      }),
+    ).toEqual({
+      title: "First",
+      description: "Desc",
+      goal: 5,
+      reward: 0,
+      label: " ",
+      public: true,
+      active: true,
+      secret: false,
+      image: null,
+      imageUpload: null,
+      channelId: "channel-1",
+      type: {
+        label: "countMessage",
+        data: "keep-this",
       },
     });
   });
@@ -125,7 +244,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -143,7 +262,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -165,7 +284,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       }),
@@ -194,6 +313,29 @@ describe("achievementPayload", () => {
         "type.label is not supported",
       ),
     );
+    expect(() =>
+      parseCreateAchievementRequest({
+        title: "First",
+        description: "Desc",
+        goal: 1,
+        reward: 0,
+        public: true,
+        active: true,
+        secret: false,
+        imageUpload: "invalid",
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "imageUpload must be an object",
+      ),
+    );
   });
 
   it("should reject invalid channel point cost data", () => {
@@ -208,7 +350,7 @@ describe("achievementPayload", () => {
         secret: false,
         channelId: "channel-1",
         type: {
-          label: "channel_point_cost",
+          label: "countCostChannelPoint",
           data: "abc",
         },
       }),
@@ -216,7 +358,7 @@ describe("achievementPayload", () => {
       new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       ),
     );
   });
@@ -234,6 +376,46 @@ describe("achievementPayload", () => {
         400,
         "validation_error",
         "Request body must be an object",
+      ),
+    );
+  });
+
+  it("should parse a valid achievement leaderboard query", () => {
+    expect(
+      parseAchievementLeaderboardQuery({
+        limit: "5",
+        sort: "completed",
+      }),
+    ).toEqual({
+      limit: 5,
+      sort: "completed",
+    });
+
+    expect(parseAchievementLeaderboardQuery({})).toEqual({});
+  });
+
+  it("should reject invalid achievement leaderboard query values", () => {
+    expect(() =>
+      parseAchievementLeaderboardQuery({
+        limit: "0",
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "limit must be a positive integer",
+      ),
+    );
+
+    expect(() =>
+      parseAchievementLeaderboardQuery({
+        sort: "invalid",
+      }),
+    ).toThrow(
+      new ApplicationError(
+        400,
+        "validation_error",
+        "sort must be either xp or completed",
       ),
     );
   });
@@ -275,7 +457,7 @@ describe("achievementPayload", () => {
       image: "https://image.test/file.png",
       channelId: null,
       type: {
-        label: "api_caller",
+        label: "apicaller",
         data: "event_key",
       },
     });
@@ -296,7 +478,7 @@ describe("achievementPayload", () => {
           channelId: "channel-1",
           typeAchievement: {
             id: "type-1",
-            label: "message",
+            label: "countMessage",
             data: "",
           },
         },
@@ -317,9 +499,29 @@ describe("achievementPayload", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
+      },
+    ]);
+  });
+
+  it("should map a DB achievement leaderboard response", () => {
+    expect(
+      mapDbAchievementLeaderboardResponse([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]),
+    ).toEqual([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
       },
     ]);
   });
@@ -338,7 +540,7 @@ describe("achievementPayload", () => {
         channelId: "channel-1",
         typeAchievement: {
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         },
         achieved: {
@@ -365,7 +567,7 @@ describe("achievementPayload", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
       userState: {
@@ -394,7 +596,7 @@ describe("achievementPayload", () => {
             channelId: "channel-1",
             typeAchievement: {
               id: "type-1",
-              label: "message",
+              label: "countMessage",
               data: "",
             },
             achieved: null,
@@ -435,6 +637,13 @@ describe("achievementPayload", () => {
         "DB service returned an invalid achievement list payload",
       ),
     );
+    expect(() => mapDbAchievementLeaderboardResponse("invalid")).toThrow(
+      new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement leaderboard payload",
+      ),
+    );
     expect(() =>
       mapDbAchievementToResponse({
         id: "achievement-1",
@@ -449,7 +658,7 @@ describe("achievementPayload", () => {
         channelId: "channel-1",
         typeAchievement: {
           id: "type-1",
-          label: "message",
+          label: "countMessage",
           data: "",
         },
       }),
@@ -473,7 +682,7 @@ describe("achievementPayload", () => {
         active: true,
         secret: false,
         type: {
-          label: "Message Content",
+          label: "Content Message",
           data: " keyword ",
         },
       }),
@@ -486,7 +695,7 @@ describe("achievementPayload", () => {
       active: true,
       secret: false,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "keyword",
       },
     });

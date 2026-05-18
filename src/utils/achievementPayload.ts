@@ -1,19 +1,41 @@
 import { ApplicationError } from "../middlewares/errorHandler";
 import {
   Achievement,
+  AchievementLeaderboardEntry,
   AchievementSuggestion,
+  Badge,
   UserAchievement,
 } from "../models/achievement";
 
 const supportedTriggerLabels = [
-  "message",
-  "message_content",
-  "channel_point_cost",
-  "redeem_channel_point",
-  "api_caller",
+  "countMessage",
+  "contentMessage",
+  "countCostChannelPoint",
+  "countRedeemChannelPoint",
+  "apicaller",
 ] as const;
 
 type SupportedTriggerLabel = (typeof supportedTriggerLabels)[number];
+
+const triggerLabelAliases = new Map<string, SupportedTriggerLabel>([
+  ["countmessage", "countMessage"],
+  ["count_message", "countMessage"],
+  ["message", "countMessage"],
+  ["contentmessage", "contentMessage"],
+  ["content_message", "contentMessage"],
+  ["messagecontent", "contentMessage"],
+  ["message_content", "contentMessage"],
+  ["countcostchannelpoint", "countCostChannelPoint"],
+  ["count_cost_channel_point", "countCostChannelPoint"],
+  ["channelpointcost", "countCostChannelPoint"],
+  ["channel_point_cost", "countCostChannelPoint"],
+  ["countredeemchannelpoint", "countRedeemChannelPoint"],
+  ["count_redeem_channel_point", "countRedeemChannelPoint"],
+  ["redeemchannelpoint", "countRedeemChannelPoint"],
+  ["redeem_channel_point", "countRedeemChannelPoint"],
+  ["apicaller", "apicaller"],
+  ["api_caller", "apicaller"],
+]);
 
 interface CreateAchievementRequest {
   title: string;
@@ -25,6 +47,7 @@ interface CreateAchievementRequest {
   active: boolean;
   secret: boolean;
   image: string | null;
+  imageUpload?: AchievementImageUpload | null;
   channelId: string;
   type: {
     label: SupportedTriggerLabel;
@@ -42,19 +65,44 @@ interface UpdateAchievementRequest {
   active: boolean;
   secret: boolean;
   image: string | null;
+  imageUpload?: AchievementImageUpload | null;
   type: {
     label: SupportedTriggerLabel;
     data: string | null;
   };
 }
 
+interface AchievementImageUpload {
+  fileName: string;
+  mimeType: string;
+  contentBase64: string;
+}
+
 interface AiSuggestionRequest {
   prompt: string;
+}
+
+interface AchievementLeaderboardQuery {
+  limit?: number;
+  sort?: "xp" | "completed";
+}
+
+interface CreateBadgeRequest {
+  title: string;
+  image: string | null;
+  imageUpload?: AchievementImageUpload | null;
+}
+
+interface UpdateBadgeRequest {
+  title?: string;
+  image?: string | null;
+  imageUpload?: AchievementImageUpload | null;
 }
 
 type CreateAchievementResponse = Achievement;
 type UpdateAchievementResponse = Achievement;
 type AiSuggestionResponse = AchievementSuggestion;
+type BadgeResponse = Badge;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -94,6 +142,29 @@ function readOptionalImage(value: unknown): string | null {
   return readRequiredString(value, "image");
 }
 
+function readImageUpload(value: unknown): AchievementImageUpload | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (!isRecord(value)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "imageUpload must be an object",
+    );
+  }
+
+  return {
+    fileName: readRequiredString(value.fileName, "imageUpload.fileName"),
+    mimeType: readRequiredString(value.mimeType, "imageUpload.mimeType"),
+    contentBase64: readRequiredString(
+      value.contentBase64,
+      "imageUpload.contentBase64",
+    ),
+  };
+}
+
 function readBoolean(value: unknown, fieldName: string): boolean {
   if (typeof value !== "boolean") {
     throw new ApplicationError(
@@ -131,15 +202,19 @@ function readNonNegativeInteger(value: unknown, fieldName: string): number {
 }
 
 function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
-  const normalizedValue = value
-    .trim()
-    .toLowerCase()
-    .split(/[\s-]+/g)
-    .join("_");
+  const trimmedValue = value.trim();
 
-  if (
-    !supportedTriggerLabels.includes(normalizedValue as SupportedTriggerLabel)
-  ) {
+  if (supportedTriggerLabels.includes(trimmedValue as SupportedTriggerLabel)) {
+    return trimmedValue as SupportedTriggerLabel;
+  }
+
+  const normalizedValue = trimmedValue
+    .toLowerCase()
+    .split(/[\s-]+/)
+    .join("_");
+  const aliasedValue = triggerLabelAliases.get(normalizedValue);
+
+  if (!aliasedValue) {
     throw new ApplicationError(
       400,
       "validation_error",
@@ -147,18 +222,22 @@ function normalizeTriggerLabel(value: string): SupportedTriggerLabel {
     );
   }
 
-  return normalizedValue as SupportedTriggerLabel;
+  return aliasedValue;
 }
 
 function normalizeTypeData(
   label: SupportedTriggerLabel,
   value: unknown,
 ): string | null {
-  if (label === "message") {
-    return null;
+  if (label === "countMessage") {
+    if (value === undefined || value === null) {
+      return null;
+    }
+
+    return readRequiredString(value, "type.data");
   }
 
-  if (label === "channel_point_cost") {
+  if (label === "countCostChannelPoint") {
     if (
       (!Number.isInteger(value) || Number(value) <= 0) &&
       typeof value !== "string"
@@ -166,7 +245,7 @@ function normalizeTypeData(
       throw new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       );
     }
 
@@ -176,7 +255,7 @@ function normalizeTypeData(
       throw new ApplicationError(
         400,
         "validation_error",
-        "type.data must be a positive integer or numeric string for channel_point_cost",
+        "type.data must be a positive integer or numeric string for countCostChannelPoint",
       );
     }
 
@@ -193,6 +272,7 @@ function parseCreateAchievementRequest(
 
   return {
     ...parsedPayload,
+    label: " ",
     channelId: readRequiredString(
       (body as Record<string, unknown>).channelId,
       "channelId",
@@ -220,6 +300,61 @@ function parseAiSuggestionRequest(body: unknown): AiSuggestionRequest {
   };
 }
 
+function parseCreateBadgeRequest(body: unknown): CreateBadgeRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  const imageUpload = readImageUpload(body.imageUpload);
+  const image = readOptionalImage(body.image);
+
+  if (!image && !imageUpload) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "image or imageUpload is required",
+    );
+  }
+
+  return {
+    title: readRequiredString(body.title, "title"),
+    image,
+    imageUpload,
+  };
+}
+
+function parseUpdateBadgeRequest(body: unknown): UpdateBadgeRequest {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "Request body must be an object",
+    );
+  }
+
+  const imageUpload = readImageUpload(body.imageUpload);
+  const hasTitle = body.title !== undefined;
+  const hasImage = body.image !== undefined;
+
+  if (!hasTitle && !hasImage && !imageUpload) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "At least one of title, image or imageUpload is required",
+    );
+  }
+
+  return {
+    title: hasTitle ? readRequiredString(body.title, "title") : undefined,
+    image: hasImage ? readOptionalImage(body.image) : undefined,
+    imageUpload,
+  };
+}
+
 function parseAchievementDefinitionPayload(
   body: unknown,
 ): Omit<CreateAchievementRequest, "channelId"> {
@@ -243,6 +378,8 @@ function parseAchievementDefinitionPayload(
     readRequiredString(body.type.label, "type.label"),
   );
 
+  const imageUpload = readImageUpload(body.imageUpload);
+
   return {
     title: readRequiredString(body.title, "title"),
     description: readRequiredString(body.description, "description"),
@@ -256,6 +393,7 @@ function parseAchievementDefinitionPayload(
     active: readBoolean(body.active, "active"),
     secret: readBoolean(body.secret, "secret"),
     image: readOptionalImage(body.image),
+    imageUpload,
     type: {
       label: triggerLabel,
       data: normalizeTypeData(triggerLabel, body.type.data),
@@ -284,10 +422,18 @@ function parseDbType(body: Record<string, unknown>): {
   const label = normalizeTriggerLabel(
     readRequiredString(labelSource, "Type_Label"),
   );
+  const mappedData =
+    label === "countMessage" &&
+    (dataSource === undefined ||
+      dataSource === null ||
+      (typeof dataSource === "string" && dataSource.trim().length === 0) ||
+      dataSource === "countMessage")
+      ? null
+      : normalizeTypeData(label, dataSource);
 
   return {
     label,
-    data: normalizeTypeData(label, dataSource),
+    data: mappedData,
   };
 }
 
@@ -420,6 +566,72 @@ function readOptionalNullableString(
   return readRequiredString(value, fieldName);
 }
 
+function readOptionalPositiveIntegerQuery(
+  value: unknown,
+  fieldName: string,
+): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a positive integer`,
+    );
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!/^\d+$/.test(trimmedValue) || Number(trimmedValue) <= 0) {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      `${fieldName} must be a positive integer`,
+    );
+  }
+
+  return Number(trimmedValue);
+}
+
+function parseAchievementLeaderboardQuery(
+  query: unknown,
+): AchievementLeaderboardQuery {
+  const limit = readOptionalPositiveIntegerQuery(
+    (query as Record<string, unknown> | undefined)?.limit,
+    "limit",
+  );
+  const rawSort = (query as Record<string, unknown> | undefined)?.sort;
+
+  if (rawSort === undefined) {
+    return { limit };
+  }
+
+  if (typeof rawSort !== "string") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "sort must be either xp or completed",
+    );
+  }
+
+  const normalizedSort = rawSort.trim();
+
+  if (normalizedSort !== "xp" && normalizedSort !== "completed") {
+    throw new ApplicationError(
+      400,
+      "validation_error",
+      "sort must be either xp or completed",
+    );
+  }
+
+  return {
+    limit,
+    sort: normalizedSort,
+  };
+}
+
 function mapDbUserState(
   body: Record<string, unknown>,
 ): UserAchievement["userState"] {
@@ -485,22 +697,90 @@ function mapDbUserAchievementsToResponse(body: unknown): UserAchievement[] {
   );
 }
 
+function mapDbAchievementLeaderboardResponse(
+  body: unknown,
+): AchievementLeaderboardEntry[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid achievement leaderboard payload",
+    );
+  }
+
+  return body.map((entry) => {
+    if (!isRecord(entry)) {
+      throw new ApplicationError(
+        502,
+        "db_service_error",
+        "DB service returned an invalid achievement leaderboard payload",
+      );
+    }
+
+    return {
+      userId: readRequiredString(entry.userId, "userId"),
+      username: readRequiredString(entry.username, "username"),
+      xp: readNonNegativeInteger(entry.xp, "xp"),
+      completed: readNonNegativeInteger(entry.completed, "completed"),
+    };
+  });
+}
+
+function mapDbBadgeToResponse(body: unknown): Badge {
+  if (!isRecord(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid badge payload",
+    );
+  }
+
+  return {
+    id: readRequiredString(body.id, "id"),
+    title: readRequiredString(body.title, "title"),
+    image: readRequiredString(body.img, "img"),
+  };
+}
+
+function mapDbBadgesToResponse(body: unknown): Badge[] {
+  if (!Array.isArray(body)) {
+    throw new ApplicationError(
+      502,
+      "db_service_error",
+      "DB service returned an invalid badge list payload",
+    );
+  }
+
+  return body.map((badge) => mapDbBadgeToResponse(badge));
+}
+
 export {
+  mapDbAchievementLeaderboardResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbBadgeToResponse,
+  mapDbBadgesToResponse,
   mapDbUserAchievementToResponse,
   mapDbUserAchievementsToResponse,
   mapAiSuggestionToResponse,
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
+  parseCreateBadgeRequest,
   parseCreateAchievementRequest,
+  parseUpdateBadgeRequest,
   parseUpdateAchievementRequest,
   supportedTriggerLabels,
 };
 export type {
+  AchievementLeaderboardQuery,
   AiSuggestionRequest,
   AiSuggestionResponse,
+  BadgeResponse,
   CreateAchievementRequest,
+  CreateBadgeRequest,
+  AchievementImageUpload,
   CreateAchievementResponse,
+  UpdateBadgeRequest,
   UpdateAchievementRequest,
   UpdateAchievementResponse,
 };

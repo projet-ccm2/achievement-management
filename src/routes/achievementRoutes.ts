@@ -9,6 +9,7 @@ interface AchievementRouteHandlers {
   deactivateAchievementHandler: RequestHandler;
   getAchievementByIdHandler: RequestHandler;
   getAchievementsByChannelIdHandler: RequestHandler;
+  getAchievementLeaderboardByChannelIdHandler: RequestHandler;
   getAchievementsByUserIdHandler: RequestHandler;
   getAchievementsByUserIdAndChannelIdHandler: RequestHandler;
   getPublicAchievementsHandler: RequestHandler;
@@ -20,6 +21,10 @@ function achievementRoutes(handlers: AchievementRouteHandlers): Router {
   router.post("/ai-suggestion", handlers.generateAchievementSuggestionHandler);
   router.post("/", handlers.createAchievementHandler);
   router.get("/public", handlers.getPublicAchievementsHandler);
+  router.get(
+    "/channel/:channelId/leaderboard",
+    handlers.getAchievementLeaderboardByChannelIdHandler,
+  );
   router.get("/channel/:channelId", handlers.getAchievementsByChannelIdHandler);
   router.get(
     "/user/:userId/channel/:channelId",

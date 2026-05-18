@@ -1,13 +1,24 @@
-/* global Response */
+/* global Response, URLSearchParams */
 import { config } from "../config/environment";
 import { ApplicationError } from "../middlewares/errorHandler";
-import { Achievement, UserAchievement } from "../models/achievement";
+import {
+  Achievement,
+  AchievementLeaderboardEntry,
+  Badge,
+  UserAchievement,
+} from "../models/achievement";
 import { logger } from "../utils/logger";
 import {
+  AchievementLeaderboardQuery,
+  CreateBadgeRequest,
   CreateAchievementRequest,
+  mapDbAchievementLeaderboardResponse,
   mapDbAchievementToResponse,
   mapDbAchievementsToResponse,
+  mapDbBadgeToResponse,
+  mapDbBadgesToResponse,
   mapDbUserAchievementsToResponse,
+  UpdateBadgeRequest,
   UpdateAchievementRequest,
 } from "../utils/achievementPayload";
 import { timedFetch } from "../utils/http";
@@ -17,10 +28,17 @@ type DbAchievementClient = {
   getAchievementById: (...args: [string]) => Promise<Achievement>;
   getAchievementsByChannelId: (...args: [string]) => Promise<Achievement[]>;
   getPublicAchievements: () => Promise<Achievement[]>;
+  getAchievementLeaderboardByChannelId: (
+    ...args: [string, AchievementLeaderboardQuery]
+  ) => Promise<AchievementLeaderboardEntry[]>;
   getAchievementsByUserId: (...args: [string]) => Promise<UserAchievement[]>;
   getAchievementsByUserIdAndChannelId: (
     ...args: [string, string]
   ) => Promise<UserAchievement[]>;
+  getUserBadges: (...args: [string]) => Promise<Badge[]>;
+  getChannelBadge: (...args: [string]) => Promise<Badge>;
+  createChannelBadge: (...args: [string, CreateBadgeRequest]) => Promise<Badge>;
+  updateChannelBadge: (...args: [string, UpdateBadgeRequest]) => Promise<Badge>;
   createAchievement: (
     ...args: [CreateAchievementRequest]
   ) => Promise<Achievement>;
@@ -37,12 +55,15 @@ function buildDbPayload(
   payload: CreateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
+  const normalizedLabel =
+    payload.label.trim().length === 0 ? " " : payload.label;
+
   return {
     title: payload.title,
     description: payload.description,
     goal: payload.goal,
     reward: payload.reward,
-    label: payload.label,
+    label: normalizedLabel,
     public: payload.public,
     active: payload.active,
     secret: payload.secret,
@@ -56,18 +77,48 @@ function buildDbUpdatePayload(
   payload: UpdateAchievementRequest,
   typeId: string,
 ): Record<string, unknown> {
+  const normalizedLabel =
+    payload.label.trim().length === 0 ? " " : payload.label;
+
   return {
     title: payload.title,
     description: payload.description,
     goal: payload.goal,
     reward: payload.reward,
-    label: payload.label,
+    label: normalizedLabel,
     public: payload.public,
     active: payload.active,
     secret: payload.secret,
     image: payload.image,
     typeId,
   };
+}
+
+function buildDbCreateBadgePayload(
+  channelId: string,
+  payload: CreateBadgeRequest,
+): Record<string, unknown> {
+  return {
+    title: payload.title,
+    img: payload.image,
+    channelId,
+  };
+}
+
+function buildDbUpdateBadgePayload(
+  payload: UpdateBadgeRequest,
+): Record<string, unknown> {
+  const dbPayload: Record<string, unknown> = {};
+
+  if (payload.title !== undefined) {
+    dbPayload.title = payload.title;
+  }
+
+  if (payload.image !== undefined) {
+    dbPayload.img = payload.image;
+  }
+
+  return dbPayload;
 }
 
 async function parseDbResponse(response: Response): Promise<unknown> {
@@ -77,21 +128,66 @@ async function parseDbResponse(response: Response): Promise<unknown> {
     return response.json();
   }
 
-  return null;
+  try {
+    return await response.text();
+  } catch {
+    return null;
+  }
 }
 
 function mapDbError(
   response: Response,
   operation: "get" | "create" | "update" | "delete" | "deactivate" | "activate",
+  body?: unknown,
 ): Error {
   if (response.status === 404) {
     return new ApplicationError(404, "not_found", "Achievement not found");
   }
 
+  if (response.status === 400 || response.status === 422) {
+    return new ApplicationError(
+      response.status,
+      "db_service_validation_error",
+      `DB service validation failed during ${operation}`,
+      body,
+    );
+  }
+
   return new ApplicationError(
-    502,
+    response.status >= 500 ? 502 : response.status,
     "db_service_error",
     `DB service could not ${operation} the achievement`,
+    body,
+  );
+}
+
+function mapDbBadgeError(
+  response: Response,
+  operation: "get" | "create" | "update",
+  body?: unknown,
+): Error {
+  if (response.status === 404) {
+    return new ApplicationError(404, "not_found", "Badge not found");
+  }
+
+  if (
+    response.status === 400 ||
+    response.status === 422 ||
+    response.status === 409
+  ) {
+    return new ApplicationError(
+      response.status,
+      "db_service_validation_error",
+      `DB service validation failed during badge ${operation}`,
+      body,
+    );
+  }
+
+  return new ApplicationError(
+    response.status >= 500 ? 502 : response.status,
+    "db_service_error",
+    `DB service could not ${operation} the badge`,
+    body,
   );
 }
 
@@ -105,6 +201,16 @@ interface DbRequestOptions {
   timeoutErrorMessage: string;
 }
 
+interface DbBadgeRequestOptions {
+  url: string;
+  method: "GET" | "POST" | "PUT";
+  operation: "get" | "create" | "update";
+  requestBody?: Record<string, unknown>;
+  logOperation: string;
+  networkErrorMessage: string;
+  timeoutErrorMessage: string;
+}
+
 /* eslint-disable no-unused-vars */
 type DbResponseMapper<T> = (...args: [unknown]) => T;
 /* eslint-enable no-unused-vars */
@@ -112,9 +218,13 @@ type DbResponseMapper<T> = (...args: [unknown]) => T;
 function buildTypeAchievementPayload(
   payload: CreateAchievementRequest | UpdateAchievementRequest,
 ): Record<string, string> {
+  const normalizedTypeData =
+    typeof payload.type.data === "string" ? payload.type.data.trim() : "";
+
   return {
     label: payload.type.label,
-    data: payload.type.data ?? "",
+    data:
+      normalizedTypeData.length > 0 ? normalizedTypeData : payload.type.label,
   };
 }
 
@@ -148,11 +258,23 @@ class HttpDbAchievementClient implements DbAchievementClient {
         method: "POST",
         url,
         status: response.status,
+        body,
       });
+
+      if (response.status === 400 || response.status === 422) {
+        throw new ApplicationError(
+          response.status,
+          "db_service_validation_error",
+          "DB service validation failed for achievement type",
+          body,
+        );
+      }
+
       throw new ApplicationError(
-        502,
+        response.status >= 500 ? 502 : response.status,
         "db_service_error",
         "DB service could not create the achievement type",
+        body,
       );
     }
 
@@ -201,8 +323,49 @@ class HttpDbAchievementClient implements DbAchievementClient {
         method: options.method,
         url: options.url,
         status: response.status,
+        body,
       });
-      throw mapDbError(response, options.operation);
+      throw mapDbError(response, options.operation, body);
+    }
+
+    return mapBody(body);
+  }
+
+  private async requestBadge<T>(
+    options: DbBadgeRequestOptions,
+    mapBody: DbResponseMapper<T>,
+  ): Promise<T> {
+    const response = await timedFetch({
+      url: options.url,
+      method: options.method,
+      serviceName: "db-service",
+      errorCode: "db_service_error",
+      networkErrorMessage: options.networkErrorMessage,
+      timeoutErrorMessage: options.timeoutErrorMessage,
+      init: options.requestBody
+        ? {
+            method: options.method,
+            headers: {
+              "content-type": "application/json",
+            },
+            body: JSON.stringify(options.requestBody),
+          }
+        : {
+            method: options.method,
+          },
+    });
+
+    const body = await parseDbResponse(response);
+
+    if (!response.ok) {
+      logger.error("DB service returned an error response", {
+        operation: options.logOperation,
+        method: options.method,
+        url: options.url,
+        status: response.status,
+        body,
+      });
+      throw mapDbBadgeError(response, options.operation, body);
     }
 
     return mapBody(body);
@@ -255,6 +418,38 @@ class HttpDbAchievementClient implements DbAchievementClient {
     );
   }
 
+  public async getAchievementLeaderboardByChannelId(
+    channelId: string,
+    query: AchievementLeaderboardQuery,
+  ): Promise<AchievementLeaderboardEntry[]> {
+    const searchParams = new URLSearchParams();
+
+    if (query.limit !== undefined) {
+      searchParams.set("limit", String(query.limit));
+    }
+
+    if (query.sort) {
+      searchParams.set("sort", query.sort);
+    }
+
+    const querySuffix =
+      searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+
+    return this.requestDb(
+      {
+        url: `${config.dbServiceUrl}/achievements/channel/${encodeURIComponent(channelId)}/leaderboard${querySuffix}`,
+        method: "GET",
+        operation: "get",
+        logOperation: "getAchievementLeaderboardByChannelId",
+        networkErrorMessage:
+          "DB service could not get the achievement leaderboard",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the achievement leaderboard",
+      },
+      mapDbAchievementLeaderboardResponse,
+    );
+  }
+
   public async getAchievementsByUserId(
     userId: string,
   ): Promise<UserAchievement[]> {
@@ -287,6 +482,74 @@ class HttpDbAchievementClient implements DbAchievementClient {
           "DB service request timed out while getting the achievement",
       },
       mapDbUserAchievementsToResponse,
+    );
+  }
+
+  public async getUserBadges(userId: string): Promise<Badge[]> {
+    return this.requestBadge(
+      {
+        url: `${config.dbServiceUrl}/users/${encodeURIComponent(userId)}/badges`,
+        method: "GET",
+        operation: "get",
+        logOperation: "getUserBadges",
+        networkErrorMessage: "DB service could not get the badges",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the badges",
+      },
+      mapDbBadgesToResponse,
+    );
+  }
+
+  public async getChannelBadge(channelId: string): Promise<Badge> {
+    return this.requestBadge(
+      {
+        url: `${config.dbServiceUrl}/channels/${encodeURIComponent(channelId)}/badge`,
+        method: "GET",
+        operation: "get",
+        logOperation: "getChannelBadge",
+        networkErrorMessage: "DB service could not get the badge",
+        timeoutErrorMessage:
+          "DB service request timed out while getting the badge",
+      },
+      mapDbBadgeToResponse,
+    );
+  }
+
+  public async createChannelBadge(
+    channelId: string,
+    payload: CreateBadgeRequest,
+  ): Promise<Badge> {
+    return this.requestBadge(
+      {
+        url: `${config.dbServiceUrl}/badges`,
+        method: "POST",
+        operation: "create",
+        logOperation: "createChannelBadge",
+        requestBody: buildDbCreateBadgePayload(channelId, payload),
+        networkErrorMessage: "DB service could not create the badge",
+        timeoutErrorMessage:
+          "DB service request timed out while creating the badge",
+      },
+      mapDbBadgeToResponse,
+    );
+  }
+
+  public async updateChannelBadge(
+    channelId: string,
+    payload: UpdateBadgeRequest,
+  ): Promise<Badge> {
+    return this.requestBadge(
+      {
+        url: `${config.dbServiceUrl}/channels/${encodeURIComponent(channelId)}/badge`,
+        method: "PUT",
+        operation: "update",
+        logOperation: "updateChannelBadge",
+        requestBody: buildDbUpdateBadgePayload(payload),
+        networkErrorMessage: "DB service could not update the badge",
+        timeoutErrorMessage:
+          "DB service request timed out while updating the badge",
+      },
+      mapDbBadgeToResponse,
     );
   }
 

@@ -22,13 +22,16 @@ jobs:
       environment: production
       cloud-run-service-name: achievement-management-prod
       service_type: "back_prive"
-      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_ALLOWED_ORIGINS"
+      required_env_vars: "PROD_DB_SERVICE_URL,PROD_IA_SERVICE_URL,PROD_BUCKET_MANAGER_URL,PROD_NOTIFICATION_HANDLER_URL,PROD_ALLOWED_ORIGINS,PROD_FRONT_URL,PROD_TWITCH_EXTENSION_IDS"
 
     secrets:
       GCP_SA_KEY: ${{ secrets.PROD_GCP_SA_KEY }}
       GCP_PROJECT_ID: ${{ secrets.PROD_GCP_PROJECT_ID }}
       DB_SERVICE_URL: ${{ secrets.PROD_DB_SERVICE_URL }}
       IA_SERVICE_URL: ${{ secrets.PROD_IA_SERVICE_URL }}
+      BUCKET_MANAGER_URL: ${{ secrets.PROD_BUCKET_MANAGER_URL }}
       NOTIFICATION_HANDLER_URL: ${{ secrets.PROD_NOTIFICATION_HANDLER_URL }}
       ALLOWED_ORIGINS: ${{ secrets.PROD_ALLOWED_ORIGINS }}
+      FRONT_URL: ${{ secrets.PROD_FRONT_URL }}
+      TWITCH_EXTENSION_IDS: ${{ secrets.PROD_TWITCH_EXTENSION_IDS }}
       TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}

@@ -6,9 +6,11 @@ import {
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildGenerateAchievementSuggestionHandler,
+  buildGetAchievementLeaderboardByChannelIdHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
   buildGetAchievementsByUserIdHandler,
+  buildGetAchievementsByUserIdAndChannelIdHandler,
   buildGetPublicAchievementsHandler,
   buildUpdateAchievementHandler,
 } from "../../../controllers/achievementController";
@@ -22,7 +24,7 @@ describe("achievementController", () => {
       description: "Desc",
       goal: 1,
       reward: 0,
-      label: "",
+      label: " ",
       public: false,
       downloads: 0,
       visits: 0,
@@ -31,7 +33,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -53,7 +55,7 @@ describe("achievementController", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -67,14 +69,15 @@ describe("achievementController", () => {
       description: "Desc",
       goal: 1,
       reward: 0,
-      label: "",
+      label: " ",
       public: false,
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -107,7 +110,7 @@ describe("achievementController", () => {
       active: true,
       secret: false,
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -151,7 +154,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -176,7 +179,7 @@ describe("achievementController", () => {
           secret: false,
           image: null,
           type: {
-            label: "message-content",
+            label: "Content Message",
             data: "updated",
           },
         },
@@ -195,8 +198,9 @@ describe("achievementController", () => {
       active: true,
       secret: false,
       image: null,
+      imageUpload: null,
       type: {
-        label: "message_content",
+        label: "contentMessage",
         data: "updated",
       },
     });
@@ -219,7 +223,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -264,7 +268,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -310,7 +314,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -356,7 +360,7 @@ describe("achievementController", () => {
       image: null,
       channelId: "channel-1",
       type: {
-        label: "message",
+        label: "countMessage",
         data: null,
       },
     });
@@ -402,7 +406,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -436,6 +440,55 @@ describe("achievementController", () => {
     );
   });
 
+  it("should return achievement leaderboard by channel id", async () => {
+    const getAchievementLeaderboardByChannelId = jest.fn().mockResolvedValue([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
+      },
+    ]);
+    const handler = buildGetAchievementLeaderboardByChannelIdHandler(
+      getAchievementLeaderboardByChannelId,
+    );
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          channelId: "channel-1",
+        },
+        query: {
+          limit: "5",
+          sort: "completed",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(getAchievementLeaderboardByChannelId).toHaveBeenCalledWith(
+      "channel-1",
+      {
+        limit: 5,
+        sort: "completed",
+      },
+    );
+    expect(response.status).toHaveBeenCalledWith(200);
+    expect(response.json).toHaveBeenCalledWith([
+      {
+        userId: "user-1",
+        username: "viewer-one",
+        xp: 150,
+        completed: 5,
+      },
+    ]);
+  });
+
   it("should return public achievements", async () => {
     const getPublicAchievements = jest.fn().mockResolvedValue([
       {
@@ -453,7 +506,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       },
@@ -495,7 +548,7 @@ describe("achievementController", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
         userState: {
@@ -536,5 +589,58 @@ describe("achievementController", () => {
         }),
       ]),
     );
+  });
+
+  it("should return achievements by user and channel id with user state", async () => {
+    const getAchievementsByUserIdAndChannelId = jest.fn().mockResolvedValue([
+      {
+        id: "achievement-1",
+        title: "Profile",
+        description: "Desc",
+        goal: 2,
+        reward: 10,
+        label: "",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: null,
+        channelId: "channel-1",
+        type: {
+          label: "countMessage",
+          data: null,
+        },
+        userState: {
+          progressCount: 2,
+          finished: true,
+          acquiredDate: "2025-09-01T10:00:00.000Z",
+        },
+      },
+    ]);
+    const handler = buildGetAchievementsByUserIdAndChannelIdHandler(
+      getAchievementsByUserIdAndChannelId,
+    );
+    const response = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as unknown as Response;
+
+    await handler(
+      {
+        params: {
+          userId: "user-1",
+          channelId: "channel-1",
+        },
+      } as unknown as Request,
+      response,
+      jest.fn(),
+    );
+
+    expect(getAchievementsByUserIdAndChannelId).toHaveBeenCalledWith(
+      "user-1",
+      "channel-1",
+    );
+    expect(response.status).toHaveBeenCalledWith(200);
   });
 });

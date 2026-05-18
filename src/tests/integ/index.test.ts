@@ -4,15 +4,20 @@ import { app } from "../../app";
 import { config } from "../../config/environment";
 import {
   activateAchievement,
+  createChannelBadge,
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
   generateAchievementSuggestion,
+  getChannelBadge,
+  getAchievementLeaderboardByChannelId,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserIdAndChannelId,
   getAchievementsByUserId,
+  getUserBadges,
   getPublicAchievements,
+  updateChannelBadge,
   updateAchievement,
 } from "../../services/achievementService";
 import { ApplicationError } from "../../middlewares/errorHandler";
@@ -28,21 +33,29 @@ jest.mock("../../utils/logger", () => ({
 
 jest.mock("../../services/achievementService", () => ({
   activateAchievement: jest.fn(),
+  createChannelBadge: jest.fn(),
   createAchievement: jest.fn(),
   deactivateAchievement: jest.fn(),
   deleteAchievement: jest.fn(),
   generateAchievementSuggestion: jest.fn(),
+  getChannelBadge: jest.fn(),
+  getAchievementLeaderboardByChannelId: jest.fn(),
   getAchievementById: jest.fn(),
   getAchievementsByChannelId: jest.fn(),
   getAchievementsByUserIdAndChannelId: jest.fn(),
   getAchievementsByUserId: jest.fn(),
+  getUserBadges: jest.fn(),
   getPublicAchievements: jest.fn(),
+  updateChannelBadge: jest.fn(),
   updateAchievement: jest.fn(),
 }));
 
 describe("Express App", () => {
   const activateAchievementMock = activateAchievement as jest.MockedFunction<
     typeof activateAchievement
+  >;
+  const createChannelBadgeMock = createChannelBadge as jest.MockedFunction<
+    typeof createChannelBadge
   >;
   const createAchievementMock = createAchievement as jest.MockedFunction<
     typeof createAchievement
@@ -51,9 +64,16 @@ describe("Express App", () => {
     generateAchievementSuggestion as jest.MockedFunction<
       typeof generateAchievementSuggestion
     >;
+  const getChannelBadgeMock = getChannelBadge as jest.MockedFunction<
+    typeof getChannelBadge
+  >;
   const getAchievementByIdMock = getAchievementById as jest.MockedFunction<
     typeof getAchievementById
   >;
+  const getAchievementLeaderboardByChannelIdMock =
+    getAchievementLeaderboardByChannelId as jest.MockedFunction<
+      typeof getAchievementLeaderboardByChannelId
+    >;
   const getAchievementsByChannelIdMock =
     getAchievementsByChannelId as jest.MockedFunction<
       typeof getAchievementsByChannelId
@@ -68,6 +88,9 @@ describe("Express App", () => {
     getAchievementsByUserIdAndChannelId as jest.MockedFunction<
       typeof getAchievementsByUserIdAndChannelId
     >;
+  const getUserBadgesMock = getUserBadges as jest.MockedFunction<
+    typeof getUserBadges
+  >;
   const deactivateAchievementMock =
     deactivateAchievement as jest.MockedFunction<typeof deactivateAchievement>;
   const deleteAchievementMock = deleteAchievement as jest.MockedFunction<
@@ -75,6 +98,9 @@ describe("Express App", () => {
   >;
   const updateAchievementMock = updateAchievement as jest.MockedFunction<
     typeof updateAchievement
+  >;
+  const updateChannelBadgeMock = updateChannelBadge as jest.MockedFunction<
+    typeof updateChannelBadge
   >;
 
   beforeEach(() => {
@@ -121,6 +147,28 @@ describe("Express App", () => {
       expect(response.headers["access-control-allow-headers"]).toBe(
         "Content-Type, Authorization",
       );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should expose CORS headers for a Twitch extension origin", async () => {
+      const response = await request(app)
+        .get("/health")
+        .set("Origin", "https://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(200);
+      expect(response.headers["access-control-allow-origin"]).toBe(
+        "https://abc123.ext-twitch.tv",
+      );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should reject malformed Twitch-like origins", async () => {
+      const response = await request(app)
+        .get("/health")
+        .set("Origin", "http://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(200);
+      expect(response.headers["access-control-allow-origin"]).toBeUndefined();
     });
 
     it("should not expose CORS headers for a disallowed origin", async () => {
@@ -141,6 +189,25 @@ describe("Express App", () => {
       expect(response.headers["access-control-allow-origin"]).toBe(
         "http://localhost:3000",
       );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
+    });
+
+    it("should answer Twitch extension preflight requests", async () => {
+      const response = await request(app)
+        .options("/achievements")
+        .set("Origin", "https://abc123.ext-twitch.tv");
+
+      expect(response.status).toBe(204);
+      expect(response.headers["access-control-allow-origin"]).toBe(
+        "https://abc123.ext-twitch.tv",
+      );
+      expect(response.headers["access-control-allow-methods"]).toBe(
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      );
+      expect(response.headers["access-control-allow-headers"]).toBe(
+        "Content-Type, Authorization",
+      );
+      expect(response.headers["access-control-allow-credentials"]).toBe("true");
     });
   });
 
@@ -163,7 +230,7 @@ describe("Express App", () => {
         description: "Unlock after 100 messages",
         goal: 100,
         reward: 250,
-        label: "",
+        label: " ",
         public: false,
         downloads: 0,
         visits: 0,
@@ -172,7 +239,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -189,7 +256,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "Message Content",
+            label: "Content Message",
             data: "hello world",
           },
         });
@@ -200,14 +267,15 @@ describe("Express App", () => {
         description: "Unlock after 100 messages",
         goal: 100,
         reward: 250,
-        label: "",
+        label: " ",
         public: false,
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -217,7 +285,7 @@ describe("Express App", () => {
         description: "Unlock after 100 messages",
         goal: 100,
         reward: 250,
-        label: "",
+        label: " ",
         public: false,
         downloads: 0,
         visits: 0,
@@ -226,7 +294,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "hello world",
         },
       });
@@ -245,7 +313,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
           },
         });
 
@@ -274,7 +342,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -307,7 +375,7 @@ describe("Express App", () => {
           secret: false,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -318,6 +386,63 @@ describe("Express App", () => {
         message:
           "Notification handler cache invalidation failed after achievement creation",
       });
+    });
+
+    it("should accept large JSON achievement payloads with imageUpload content", async () => {
+      createAchievementMock.mockResolvedValue({
+        id: "achievement-1",
+        title: "Large payload",
+        description: "Large payload",
+        goal: 100,
+        reward: 250,
+        label: " ",
+        public: false,
+        downloads: 0,
+        visits: 0,
+        active: true,
+        secret: false,
+        image: "bucket-key",
+        channelId: "channel-1",
+        type: {
+          label: "contentMessage",
+          data: "hello world",
+        },
+      });
+
+      const largeContentBase64 = "a".repeat(150_000);
+
+      const response = await request(app)
+        .post("/achievements")
+        .send({
+          title: "Large payload",
+          description: "Large payload",
+          goal: 100,
+          reward: 250,
+          public: false,
+          active: true,
+          secret: false,
+          channelId: "channel-1",
+          imageUpload: {
+            fileName: "achievement.png",
+            mimeType: "image/png",
+            contentBase64: largeContentBase64,
+          },
+          type: {
+            label: "contentMessage",
+            data: "hello world",
+          },
+        });
+
+      expect(response.status).toBe(201);
+      expect(createAchievementMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          imageUpload: {
+            fileName: "achievement.png",
+            mimeType: "image/png",
+            contentBase64: largeContentBase64,
+          },
+        }),
+      );
     });
   });
 
@@ -332,7 +457,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -356,7 +481,7 @@ describe("Express App", () => {
         active: true,
         secret: false,
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -417,7 +542,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       });
@@ -434,7 +559,7 @@ describe("Express App", () => {
           secret: false,
           image: null,
           type: {
-            label: "message-content",
+            label: "Content Message",
             data: "updated",
           },
         });
@@ -450,8 +575,9 @@ describe("Express App", () => {
         active: true,
         secret: false,
         image: null,
+        imageUpload: null,
         type: {
-          label: "message_content",
+          label: "contentMessage",
           data: "updated",
         },
       });
@@ -470,7 +596,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message_content",
+            label: "contentMessage",
             data: "",
           },
         });
@@ -499,7 +625,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -531,7 +657,7 @@ describe("Express App", () => {
           active: true,
           secret: false,
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         });
@@ -562,7 +688,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -586,7 +712,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -645,7 +771,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -671,7 +797,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -732,7 +858,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -758,7 +884,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -819,7 +945,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -843,7 +969,7 @@ describe("Express App", () => {
         image: null,
         channelId: "channel-1",
         type: {
-          label: "message",
+          label: "countMessage",
           data: null,
         },
       });
@@ -882,7 +1008,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -910,7 +1036,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -926,6 +1052,53 @@ describe("Express App", () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /achievements/channel/:channelId/leaderboard", () => {
+    it("should return the achievement leaderboard by channel", async () => {
+      getAchievementLeaderboardByChannelIdMock.mockResolvedValue([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]);
+
+      const response = await request(app).get(
+        "/achievements/channel/channel-1/leaderboard?limit=5&sort=completed",
+      );
+
+      expect(response.status).toBe(200);
+      expect(getAchievementLeaderboardByChannelIdMock).toHaveBeenCalledWith(
+        "channel-1",
+        {
+          limit: 5,
+          sort: "completed",
+        },
+      );
+      expect(response.body).toEqual([
+        {
+          userId: "user-1",
+          username: "viewer-one",
+          xp: 150,
+          completed: 5,
+        },
+      ]);
+    });
+
+    it("should reject an invalid leaderboard query", async () => {
+      const response = await request(app).get(
+        "/achievements/channel/channel-1/leaderboard?limit=0&sort=invalid",
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "limit must be a positive integer",
+      });
+      expect(getAchievementLeaderboardByChannelIdMock).not.toHaveBeenCalled();
     });
   });
 
@@ -947,7 +1120,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -973,7 +1146,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
         },
@@ -1008,7 +1181,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1039,7 +1212,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1079,7 +1252,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1115,7 +1288,7 @@ describe("Express App", () => {
           image: null,
           channelId: "channel-1",
           type: {
-            label: "message",
+            label: "countMessage",
             data: null,
           },
           userState: {
@@ -1136,6 +1309,134 @@ describe("Express App", () => {
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
+    });
+  });
+
+  describe("GET /badges/user/:userId", () => {
+    it("should return badges owned by the user", async () => {
+      getUserBadgesMock.mockResolvedValue([
+        {
+          id: "badge-1",
+          title: "Viewer legend",
+          image: "https://bucket.test/badge-1",
+        },
+      ]);
+
+      const response = await request(app).get("/badges/user/user-1");
+
+      expect(response.status).toBe(200);
+      expect(getUserBadgesMock).toHaveBeenCalledWith("user-1");
+      expect(response.body).toEqual([
+        {
+          id: "badge-1",
+          title: "Viewer legend",
+          image: "https://bucket.test/badge-1",
+        },
+      ]);
+    });
+  });
+
+  describe("GET /badges/channel/:channelId", () => {
+    it("should return the badge linked to the channel", async () => {
+      getChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app).get("/badges/channel/channel-1");
+
+      expect(response.status).toBe(200);
+      expect(getChannelBadgeMock).toHaveBeenCalledWith("channel-1");
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+  });
+
+  describe("POST /badges/channel/:channelId", () => {
+    it("should create a channel badge", async () => {
+      createChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app)
+        .post("/badges/channel/channel-1")
+        .send({
+          title: " Channel badge ",
+          image: "https://cdn.test/badge.png",
+        });
+
+      expect(response.status).toBe(201);
+      expect(createChannelBadgeMock).toHaveBeenCalledWith("channel-1", {
+        title: "Channel badge",
+        image: "https://cdn.test/badge.png",
+        imageUpload: null,
+      });
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Channel badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+
+    it("should reject invalid badge create payloads", async () => {
+      const response = await request(app)
+        .post("/badges/channel/channel-1")
+        .send({
+          title: "Channel badge",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "image or imageUpload is required",
+      });
+      expect(createChannelBadgeMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("PUT /badges/channel/:channelId", () => {
+    it("should update a channel badge", async () => {
+      updateChannelBadgeMock.mockResolvedValue({
+        id: "badge-1",
+        title: "Updated badge",
+        image: "https://bucket.test/channel-1",
+      });
+
+      const response = await request(app)
+        .put("/badges/channel/channel-1")
+        .send({
+          title: " Updated badge ",
+        });
+
+      expect(response.status).toBe(200);
+      expect(updateChannelBadgeMock).toHaveBeenCalledWith("channel-1", {
+        title: "Updated badge",
+        imageUpload: null,
+      });
+      expect(response.body).toEqual({
+        id: "badge-1",
+        title: "Updated badge",
+        image: "https://bucket.test/channel-1",
+      });
+    });
+
+    it("should reject empty badge update payloads", async () => {
+      const response = await request(app)
+        .put("/badges/channel/channel-1")
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body).toEqual({
+        code: "validation_error",
+        message: "At least one of title, image or imageUpload is required",
+      });
+      expect(updateChannelBadgeMock).not.toHaveBeenCalled();
     });
   });
 });

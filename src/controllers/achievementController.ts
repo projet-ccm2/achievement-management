@@ -1,20 +1,28 @@
 import { Request, RequestHandler, Response } from "express";
 import {
   activateAchievement,
+  createChannelBadge,
   createAchievement,
   deactivateAchievement,
   deleteAchievement,
   generateAchievementSuggestion,
+  getChannelBadge,
+  getAchievementLeaderboardByChannelId,
   getAchievementById,
   getAchievementsByChannelId,
   getAchievementsByUserId,
   getAchievementsByUserIdAndChannelId,
+  getUserBadges,
   getPublicAchievements,
+  updateChannelBadge,
   updateAchievement,
 } from "../services/achievementService";
 import {
+  parseAchievementLeaderboardQuery,
   parseAiSuggestionRequest,
+  parseCreateBadgeRequest,
   parseCreateAchievementRequest,
+  parseUpdateBadgeRequest,
   parseUpdateAchievementRequest,
 } from "../utils/achievementPayload";
 
@@ -31,6 +39,20 @@ function buildCreateAchievementHandler(
 
 const createAchievementHandler =
   buildCreateAchievementHandler(createAchievement);
+
+function buildCreateChannelBadgeHandler(
+  createChannelBadgeAction: typeof createChannelBadge,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const payload = parseCreateBadgeRequest(req.body);
+    const badge = await createChannelBadgeAction(req.params.channelId, payload);
+
+    res.status(201).json(badge);
+  };
+}
+
+const createChannelBadgeHandler =
+  buildCreateChannelBadgeHandler(createChannelBadge);
 
 function buildGenerateAchievementSuggestionHandler(
   generateAchievementSuggestionAction: typeof generateAchievementSuggestion,
@@ -62,6 +84,20 @@ function buildUpdateAchievementHandler(
 
 const updateAchievementHandler =
   buildUpdateAchievementHandler(updateAchievement);
+
+function buildUpdateChannelBadgeHandler(
+  updateChannelBadgeAction: typeof updateChannelBadge,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const payload = parseUpdateBadgeRequest(req.body);
+    const badge = await updateChannelBadgeAction(req.params.channelId, payload);
+
+    res.status(200).json(badge);
+  };
+}
+
+const updateChannelBadgeHandler =
+  buildUpdateChannelBadgeHandler(updateChannelBadge);
 
 function buildDeleteAchievementHandler(
   deleteAchievementAction: typeof deleteAchievement,
@@ -122,6 +158,18 @@ function buildGetAchievementByIdHandler(
 const getAchievementByIdHandler =
   buildGetAchievementByIdHandler(getAchievementById);
 
+function buildGetChannelBadgeHandler(
+  getChannelBadgeAction: typeof getChannelBadge,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const badge = await getChannelBadgeAction(req.params.channelId);
+
+    res.status(200).json(badge);
+  };
+}
+
+const getChannelBadgeHandler = buildGetChannelBadgeHandler(getChannelBadge);
+
 function buildGetAchievementsByChannelIdHandler(
   getAchievementsByChannelIdAction: typeof getAchievementsByChannelId,
 ): RequestHandler {
@@ -136,6 +184,24 @@ function buildGetAchievementsByChannelIdHandler(
 
 const getAchievementsByChannelIdHandler =
   buildGetAchievementsByChannelIdHandler(getAchievementsByChannelId);
+
+function buildGetAchievementLeaderboardByChannelIdHandler(
+  getAchievementLeaderboardByChannelIdAction: typeof getAchievementLeaderboardByChannelId,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const leaderboard = await getAchievementLeaderboardByChannelIdAction(
+      req.params.channelId,
+      parseAchievementLeaderboardQuery(req.query),
+    );
+
+    res.status(200).json(leaderboard);
+  };
+}
+
+const getAchievementLeaderboardByChannelIdHandler =
+  buildGetAchievementLeaderboardByChannelIdHandler(
+    getAchievementLeaderboardByChannelId,
+  );
 
 function buildGetPublicAchievementsHandler(
   getPublicAchievementsAction: typeof getPublicAchievements,
@@ -183,27 +249,49 @@ const getAchievementsByUserIdAndChannelIdHandler =
     getAchievementsByUserIdAndChannelId,
   );
 
+function buildGetUserBadgesHandler(
+  getUserBadgesAction: typeof getUserBadges,
+): RequestHandler {
+  return async (req: Request, res: Response): Promise<void> => {
+    const badges = await getUserBadgesAction(req.params.userId);
+
+    res.status(200).json(badges);
+  };
+}
+
+const getUserBadgesHandler = buildGetUserBadgesHandler(getUserBadges);
+
 export {
   buildActivateAchievementHandler,
+  buildCreateChannelBadgeHandler,
   buildCreateAchievementHandler,
   buildDeactivateAchievementHandler,
   buildDeleteAchievementHandler,
   buildGenerateAchievementSuggestionHandler,
+  buildGetChannelBadgeHandler,
+  buildGetAchievementLeaderboardByChannelIdHandler,
   buildGetAchievementByIdHandler,
   buildGetAchievementsByChannelIdHandler,
   buildGetAchievementsByUserIdHandler,
   buildGetAchievementsByUserIdAndChannelIdHandler,
+  buildGetUserBadgesHandler,
   buildGetPublicAchievementsHandler,
+  buildUpdateChannelBadgeHandler,
   buildUpdateAchievementHandler,
   activateAchievementHandler,
+  createChannelBadgeHandler,
   createAchievementHandler,
   deactivateAchievementHandler,
   deleteAchievementHandler,
   generateAchievementSuggestionHandler,
+  getChannelBadgeHandler,
+  getAchievementLeaderboardByChannelIdHandler,
   getAchievementByIdHandler,
   getAchievementsByChannelIdHandler,
   getAchievementsByUserIdHandler,
   getAchievementsByUserIdAndChannelIdHandler,
+  getUserBadgesHandler,
   getPublicAchievementsHandler,
+  updateChannelBadgeHandler,
   updateAchievementHandler,
 };

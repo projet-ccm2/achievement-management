@@ -4,9 +4,11 @@ interface Config {
   nodeEnv: string;
   dbServiceUrl: string;
   aiServiceUrl: string;
+  bucketManagerUrl: string;
   notificationHandlerUrl: string;
   cors: {
     allowedOrigins: string[];
+    twitchExtensionOrigins: string[];
   };
 }
 
@@ -36,17 +38,43 @@ function readPort(): number {
 }
 
 function readAllowedOrigins(): string[] {
-  if (!process.env.ALLOWED_ORIGINS) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("ALLOWED_ORIGINS is required in production");
-    }
+  const origins: string[] = [];
 
-    return ["http://localhost:3000", "http://localhost:8080", "null"];
+  if (process.env.FRONT_URL) {
+    origins.push(process.env.FRONT_URL.trim());
   }
 
-  return process.env.ALLOWED_ORIGINS.split(",")
-    .map((origin) => origin.trim())
-    .filter((origin) => origin.length > 0);
+  if (process.env.ALLOWED_ORIGINS) {
+    const parsedOrigins = process.env.ALLOWED_ORIGINS.split(",")
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+    origins.push(...parsedOrigins);
+  }
+
+  if (origins.length === 0) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ALLOWED_ORIGINS or FRONT_URL is required in production");
+    }
+    return [
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:8080",
+      "null",
+    ];
+  }
+
+  return origins;
+}
+
+function readTwitchExtensionOrigins(): string[] {
+  if (!process.env.TWITCH_EXTENSION_IDS) {
+    return [];
+  }
+
+  return process.env.TWITCH_EXTENSION_IDS.split(",")
+    .map((extensionId) => extensionId.trim().toLowerCase())
+    .filter((extensionId) => /^[a-z0-9-]+$/.test(extensionId))
+    .map((extensionId) => `https://${extensionId}.ext-twitch.tv`);
 }
 
 function validateConfig(): Config {
@@ -55,9 +83,11 @@ function validateConfig(): Config {
     nodeEnv: process.env.NODE_ENV || "development",
     dbServiceUrl: readRequiredUrl("DB_SERVICE_URL"),
     aiServiceUrl: readRequiredUrl("IA_SERVICE_URL"),
+    bucketManagerUrl: readRequiredUrl("BUCKET_MANAGER_URL"),
     notificationHandlerUrl: readRequiredUrl("NOTIFICATION_HANDLER_URL"),
     cors: {
       allowedOrigins: readAllowedOrigins(),
+      twitchExtensionOrigins: readTwitchExtensionOrigins(),
     },
   };
 }

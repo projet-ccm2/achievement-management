@@ -6,10 +6,18 @@ class ApplicationError extends Error {
 
   public readonly code: string;
 
-  constructor(statusCode: number, code: string, message: string) {
+  public readonly details: unknown;
+
+  constructor(
+    statusCode: number,
+    code: string,
+    message: string,
+    details?: unknown,
+  ) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
+    this.details = details;
   }
 }
 
@@ -31,6 +39,7 @@ function errorHandler(
     res.status(error.statusCode).json({
       code: error.code,
       message: error.message,
+      ...(error.details ? { details: error.details } : {}),
     });
     return;
   }
